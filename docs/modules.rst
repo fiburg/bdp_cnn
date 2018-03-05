@@ -6,6 +6,6 @@ Classes
    :maxdepth: 1
    :titlesonly:
 
-   bdp_cnn.testfile
+   bdp_cnn
 
 
