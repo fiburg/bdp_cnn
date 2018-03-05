@@ -1,9 +1,9 @@
 Lorenz
 ======
 
-.. automodule:: bdp_cnn.LorenzDataCreation
+.. automodule:: bdp_cnn.Lorenz.LorenzDataCreation
 
-.. currentmodule:: bdp_cnn.LorenzDataCreation
+.. currentmodule:: bdp_cnn.Lorenz.LorenzDataCreation
 
 .. autosummary::
    :toctree: generated
