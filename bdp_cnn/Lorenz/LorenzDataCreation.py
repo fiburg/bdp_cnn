@@ -46,16 +46,16 @@ class Lorenz(object):
         """
 
 
-        start_state = self.rnd.normal(boundaries[0], boundaries[1], size=(self.nr_vars, 1))
+        start_state = self.rnd.normal(boundaries[0], boundaries[1], size=(1,self.nr_vars))
 
         all_steps = np.arange(0,self.endtime+self.step_days,self.step_days)
         l96_truth = Lorenz96(self.forcing, self.nr_vars)
         truth_integrator = RK4Integrator(l96_truth, dt=self.step)
 
         ds = forward_model( all_steps=all_steps, start_point=self.init_days,start_state=start_state,
-                                 integrator=truth_integrator)
+                                 integrator=truth_integrator,nr_grids=self.nr_vars)
 
-        self.results[label].append(ds)
+        self.results[label] = ds
 
 
 
