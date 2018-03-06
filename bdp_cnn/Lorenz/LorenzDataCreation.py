@@ -38,6 +38,9 @@ class Lorenz(object):
 
     def run_model(self,boundaries=(0,0.01),label="Truth"):
         """
+        Running the model.
+        Results will be stored in the instance-variable "results" which is a dictionary.
+        The label is the key for the run, to be later found in the results.
 
 
         :param boundaries: tuple: Within this range the start state of the model will be generated.
@@ -60,6 +63,7 @@ class Lorenz(object):
 
 
 if __name__ == "__main__":
-    truth_run = Lorenz(1000,6,365)
-    truth_run.run_model()
+    model = Lorenz(1000,6,365)
+    model.run_model(label="Test")
+    print(model.results["Test"])
 

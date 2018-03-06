@@ -1,0 +1,295 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>bdp_cnn.Lorenz.LorenzDataCreation &mdash; bdp_cnn 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+  
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
+    <link rel="top" title="bdp_cnn 0.0.1 documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> bdp_cnn
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Classes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">bdp_cnn</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>bdp_cnn.Lorenz.LorenzDataCreation</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for bdp_cnn.Lorenz.LorenzDataCreation</h1><div class="highlight"><pre>
+<span></span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">enkf_lorenz.models</span> <span class="k">import</span> <span class="n">Lorenz96</span>
+<span class="kn">from</span> <span class="nn">enkf_lorenz.integrator</span> <span class="k">import</span> <span class="n">RK4Integrator</span>
+<span class="kn">from</span> <span class="nn">enkf_lorenz.utilities</span> <span class="k">import</span> <span class="n">forward_model</span>
+<span class="kn">from</span> <span class="nn">enkf_lorenz.observation.generator</span> <span class="k">import</span> <span class="n">observation_generator</span>
+<span class="kn">from</span> <span class="nn">enkf_lorenz.assimilation.letkf</span> <span class="k">import</span> <span class="n">Letkf</span>
+
+<div class="viewcode-block" id="Lorenz"><a class="viewcode-back" href="../../../generated/bdp_cnn.Lorenz.LorenzDataCreation.Lorenz.html#bdp_cnn.Lorenz.LorenzDataCreation.Lorenz">[docs]</a><span class="k">class</span> <span class="nc">Lorenz</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class for creating data with the lorenzmodel coded by Tobias Finn.</span>
+<span class="sd">    The package enkf_lorenz needs to be installed for this to work.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Lorenz.__init__"><a class="viewcode-back" href="../../../generated/bdp_cnn.Lorenz.LorenzDataCreation.Lorenz.html#bdp_cnn.Lorenz.LorenzDataCreation.Lorenz.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">init_days_d</span><span class="p">,</span><span class="n">stepsize_h</span><span class="p">,</span><span class="n">runtime_d</span><span class="p">,</span> <span class="n">nr_vars</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">forcing</span><span class="o">=</span><span class="mi">8</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the model.</span>
+
+<span class="sd">        :param init_days_d: float: Days before the modelstart. Will be used as initialization.</span>
+<span class="sd">        :param stepsize_h: float: size of timesteps to be calculated in hours.</span>
+<span class="sd">        :param runtime_d: float: duration of the modelrun in days.</span>
+<span class="sd">        :param nr_vars: int: number of gridpoints.</span>
+<span class="sd">        :param forcing: Forcing of the model.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rnd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_days</span> <span class="o">=</span> <span class="n">init_days_d</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">stepsize_h</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="mf">0.05</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step_days</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="o">*</span> <span class="mi">5</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">endtime</span> <span class="o">=</span> <span class="n">runtime_d</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">init_days</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nr_vars</span> <span class="o">=</span> <span class="n">nr_vars</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">forcing</span> <span class="o">=</span> <span class="n">forcing</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">results</span> <span class="o">=</span> <span class="p">{}</span></div>
+
+
+<div class="viewcode-block" id="Lorenz.run_model"><a class="viewcode-back" href="../../../generated/bdp_cnn.Lorenz.LorenzDataCreation.Lorenz.run_model.html#bdp_cnn.Lorenz.LorenzDataCreation.Lorenz.run_model">[docs]</a>    <span class="k">def</span> <span class="nf">run_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">boundaries</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mf">0.01</span><span class="p">),</span><span class="n">label</span><span class="o">=</span><span class="s2">&quot;Truth&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Running the model.</span>
+<span class="sd">        Results will be stored in the instance-variable &quot;results&quot; which is a dictionary.</span>
+<span class="sd">        The label is the key for the run, to be later found in the results.</span>
+
+
+<span class="sd">        :param boundaries: tuple: Within this range the start state of the model will be generated.</span>
+<span class="sd">        :param label: str: Name of the run, to get the results by.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+
+        <span class="n">start_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rnd</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">boundaries</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">boundaries</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">nr_vars</span><span class="p">))</span>
+
+        <span class="n">all_steps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">endtime</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">step_days</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">step_days</span><span class="p">)</span>
+        <span class="n">l96_truth</span> <span class="o">=</span> <span class="n">Lorenz96</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">forcing</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nr_vars</span><span class="p">)</span>
+        <span class="n">truth_integrator</span> <span class="o">=</span> <span class="n">RK4Integrator</span><span class="p">(</span><span class="n">l96_truth</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">)</span>
+
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">forward_model</span><span class="p">(</span> <span class="n">all_steps</span><span class="o">=</span><span class="n">all_steps</span><span class="p">,</span> <span class="n">start_point</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">init_days</span><span class="p">,</span><span class="n">start_state</span><span class="o">=</span><span class="n">start_state</span><span class="p">,</span>
+                                 <span class="n">integrator</span><span class="o">=</span><span class="n">truth_integrator</span><span class="p">,</span><span class="n">nr_grids</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nr_vars</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">ds</span></div></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">Lorenz</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">365</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">run_model</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s2">&quot;Test&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="s2">&quot;Test&quot;</span><span class="p">])</span>
+
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Tobias Machnitzki and Finn Burgemeister.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'0.0.1',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
