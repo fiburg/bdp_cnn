@@ -13,12 +13,6 @@ testclass
    .. autosummary::
       :toctree:
 
-     :toctree:
-
-     :toctree:
-
-     :toctree:
-
   
    
    

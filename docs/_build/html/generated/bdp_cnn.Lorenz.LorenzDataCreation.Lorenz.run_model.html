@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Overview: module code &mdash; bdp_cnn 0.0.1 documentation</title>
+  <title>run_model &mdash; bdp_cnn 0.0.1 documentation</title>
   
 
   
@@ -37,7 +37,9 @@
         <link rel="index" title="Index"
               href="../genindex.html"/>
         <link rel="search" title="Search" href="../search.html"/>
-    <link rel="top" title="bdp_cnn 0.0.1 documentation" href="../index.html"/> 
+    <link rel="top" title="bdp_cnn 0.0.1 documentation" href="../index.html"/>
+        <link rel="up" title="Lorenz" href="bdp_cnn.Lorenz.LorenzDataCreation.Lorenz.html"/>
+        <link rel="prev" title="Lorenz" href="bdp_cnn.Lorenz.LorenzDataCreation.Lorenz.html"/> 
 
   
   <script src="../_static/js/modernizr.min.js"></script>
@@ -90,8 +92,17 @@
               
             
             
-              <ul>
-<li class="toctree-l1"><a class="reference internal" href="../modules.html">Classes</a></li>
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../modules.html">Classes</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../bdp_cnn.html">Lorenz</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="bdp_cnn.Lorenz.LorenzDataCreation.Lorenz.html">Lorenz</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">run_model</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 
             
@@ -138,10 +149,20 @@
     
       <li><a href="../index.html">Docs</a> &raquo;</li>
         
-      <li>Overview: module code</li>
+          <li><a href="../modules.html">Classes</a> &raquo;</li>
+        
+          <li><a href="../bdp_cnn.html">Lorenz</a> &raquo;</li>
+        
+          <li><a href="bdp_cnn.Lorenz.LorenzDataCreation.Lorenz.html">Lorenz</a> &raquo;</li>
+        
+      <li>run_model</li>
     
     
       <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/generated/bdp_cnn.Lorenz.LorenzDataCreation.Lorenz.run_model.rst.txt" rel="nofollow"> View page source</a>
+          
         
       </li>
     
@@ -153,10 +174,30 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <h1>All modules for which code is available</h1>
-<ul><li><a href="bdp_cnn/Lorenz/LorenzDataCreation.html">bdp_cnn.Lorenz.LorenzDataCreation</a></li>
-<li><a href="bdp_cnn/testfile.html">bdp_cnn.testfile</a></li>
+  <div class="section" id="run-model">
+<h1>run_model<a class="headerlink" href="#run-model" title="Permalink to this headline">¶</a></h1>
+<dl class="method">
+<dt id="bdp_cnn.Lorenz.LorenzDataCreation.Lorenz.run_model">
+<code class="descclassname">Lorenz.</code><code class="descname">run_model</code><span class="sig-paren">(</span><em>boundaries=(0</em>, <em>0.01)</em>, <em>label='Truth'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/bdp_cnn/Lorenz/LorenzDataCreation.html#Lorenz.run_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bdp_cnn.Lorenz.LorenzDataCreation.Lorenz.run_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Running the model.
+Results will be stored in the instance-variable “results” which is a dictionary.
+The label is the key for the run, to be later found in the results.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>boundaries</strong> – tuple: Within this range the start state of the model will be generated.</li>
+<li><strong>label</strong> – str: Name of the run, to get the results by.</li>
 </ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
 
            </div>
            <div class="articleComments">
@@ -164,6 +205,13 @@
            </div>
           </div>
           <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="bdp_cnn.Lorenz.LorenzDataCreation.Lorenz.html" class="btn btn-neutral" title="Lorenz" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
   
 
   <hr/>

@@ -1,13 +1,15 @@
-Testclass
-=========
+Lorenz
+======
 
-.. automodule:: bdp_cnn.testfile
+.. automodule:: bdp_cnn.Lorenz.LorenzDataCreation
 
-.. currentmodule:: bdp_cnn.testfile
+.. currentmodule:: bdp_cnn.Lorenz.LorenzDataCreation
 
 .. autosummary::
    :toctree: generated
 
-   testclass
+   Lorenz
+
+
 
 
