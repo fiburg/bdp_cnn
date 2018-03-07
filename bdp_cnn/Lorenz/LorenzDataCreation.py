@@ -1,5 +1,6 @@
 
 import numpy as np
+from xarray import Dataset as xr_ds
 
 from enkf_lorenz.models import Lorenz96
 from enkf_lorenz.integrator import RK4Integrator
@@ -33,7 +34,7 @@ class Lorenz(object):
         self.nr_vars = nr_vars
         self.forcing = forcing
 
-        self.results = {}
+        self.results = np.nan
 
 
     def run_model(self,boundaries=(0,0.01),label="Truth"):
@@ -58,12 +59,26 @@ class Lorenz(object):
         ds = forward_model( all_steps=all_steps, start_point=self.init_days,start_state=start_state,
                                  integrator=truth_integrator,nr_grids=self.nr_vars)
 
-        self.results[label] = ds
+        self.results = ds
 
+    def write_netcdf(self, path="."):
+        """
+        Write results to file.
+        Results of xarray will be stored in an netcdf4 file.
+
+        Args:
+            path: str: path for output, optional
+
+        Returns:
+
+        """
+
+        self.results.to_netcdf(path=path, mode='w', format='NETCDF4')
 
 
 if __name__ == "__main__":
-    model = Lorenz(1000,6,365)
+    model = Lorenz(1000, 6, 365)
     model.run_model(label="Test")
     print(model.results["Test"])
+    model.write_netcdf()
 
