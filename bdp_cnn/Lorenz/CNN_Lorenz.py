@@ -26,6 +26,14 @@ class CNN(object):
         self.model.fit(self.x_train, self.y_train, epochs=5, batch_size=32)
 
     def get_keys(self,file_name):
+        """
+        Get a list of all keys, excluding "time" and "grid"
+
+        Args:
+            file_name: str: name and path to file.
+
+        """
+
         nc = Dataset(file_name)
         keylist = []
         for key in nc.variables.keys():
@@ -34,6 +42,14 @@ class CNN(object):
         return keylist
 
     def read_netcdf(self,file_name,keys=None):
+        """
+        Reads data from netcdf and stores it to x_train and y_train.
+
+        Args:
+            file_name: str: name and path to file.
+            keys: list: optional, which keys to use. If None, then all keys will be used.
+
+        """
         if not keys:
             keys = self.get_keys(file_name)
 
