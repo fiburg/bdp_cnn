@@ -1,4 +1,4 @@
-from .LorenzDataCreation import Lorenz
+from bdp_cnn.Lorenz.LorenzDataCreation import Lorenz
 from joblib import Parallel, delayed
 
 
@@ -50,4 +50,7 @@ def main(members,init_time=1000,duration_time=365*10,stepsize=6,cpus=-1):
     return model
 
 if __name__ == "__main__":
+    from netCDF4 import Dataset
     model  = main(4)
+    model.write_netcdf()
+    nc = Dataset("test_file.nc")
