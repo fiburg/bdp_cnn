@@ -78,13 +78,10 @@ class Lorenz(object):
             ds = nc.Dataset(path, 'w', 'NETCDF4')
             ds.creation_date = time.asctime()
 
-
-            irun = 0
-
-            for key in self.results:
+            for irun, key in enumerate(self.results):
 
                 # init create dimensions, variables and set constant values
-                if key == next(iter(self.results.keys())):
+                if irun == 0:
                     ds.createDimension('model_run', len(self.results))
                     ds.createDimension('time', self.results[key].shape[1])
                     ds.createDimension('grid', self.results[key].shape[2])
@@ -95,19 +92,16 @@ class Lorenz(object):
 
                     # time is constant for all ensemles
                     grid_var = ds.createVariable('grid', 'f8', ('grid',))
-                    grid_var.units = "1"
-
-                    value_var = ds.createVariable('value', 'f8', ('model_run', 'time', 'grid'))
-                    value_var.units = "1"
 
                     # insert constant values
                     time_var[:] = self.results[key].time
                     grid_var[:] = self.results[key].grid
 
-                # insert model result
-                value_var[irun, :, :] = self.results[key][0, :, :]
+                # create for specific model runs new value variable
+                value_var = ds.createVariable(str(key), 'f8', ('time', 'grid'))
 
-                irun += 1
+                # insert model result
+                value_var[:, :] = self.results[key][0, :, :]
 
             ds.close()
             print('method write_netcdf: ' + path)
