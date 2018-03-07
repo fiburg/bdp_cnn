@@ -17,7 +17,7 @@ def _run_ensemble(model,i):
     model.run_model(boundaries=(i,i+0.0005),label=i)
     return (i,model.results[i])
 
-def main(members,init_time=1000,duration_time=365*10,stepsize=6,cpus=-1):
+def creation_main(members,init_time=1000,duration_time=365*10,stepsize=6,cpus=-1):
     """
     Main function to easily create lots of data for CNN input.
 
@@ -32,7 +32,7 @@ def main(members,init_time=1000,duration_time=365*10,stepsize=6,cpus=-1):
         obj: instance of the Lorenz-class containing the results.
 
     Example:
-        >>> model = main(4)
+        >>> model = creation_main(4)
 
         This would create an object called "model" with the default settings and 4 model members.
 
@@ -50,4 +50,4 @@ def main(members,init_time=1000,duration_time=365*10,stepsize=6,cpus=-1):
     return model
 
 if __name__ == "__main__":
-    model  = main(4)
+    model  = creation_main(4)
