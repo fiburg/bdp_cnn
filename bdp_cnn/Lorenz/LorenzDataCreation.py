@@ -1,6 +1,7 @@
 
 import numpy as np
 import netCDF4 as nc
+import time
 
 from enkf_lorenz.models import Lorenz96
 from enkf_lorenz.integrator import RK4Integrator
@@ -75,6 +76,8 @@ class Lorenz(object):
 
         if len(self.results) > 0:
             ds = nc.Dataset(path, 'w', 'NETCDF4')
+            ds.creation_date = time.asctime()
+
 
             irun = 0
 
@@ -98,8 +101,8 @@ class Lorenz(object):
                     value_var.units = "1"
 
                     # insert constant values
-                    time_var[:] = self.results[key][0, :, 0]
-                    grid_var[:] = self.results[key][0, 0, :]
+                    time_var[:] = self.results[key].time
+                    grid_var[:] = self.results[key].grid
 
                 # insert model result
                 value_var[irun, :, :] = self.results[key][0, :, :]
