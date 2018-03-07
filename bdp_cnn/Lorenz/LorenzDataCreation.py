@@ -1,6 +1,6 @@
 
 import numpy as np
-from xarray import Dataset as xr_ds
+import netCDF4 as nc
 
 from enkf_lorenz.models import Lorenz96
 from enkf_lorenz.integrator import RK4Integrator
@@ -34,7 +34,7 @@ class Lorenz(object):
         self.nr_vars = nr_vars
         self.forcing = forcing
 
-        self.results = np.nan
+        self.results = {}
 
 
     def run_model(self,boundaries=(0,0.01),label="Truth"):
@@ -59,9 +59,9 @@ class Lorenz(object):
         ds = forward_model( all_steps=all_steps, start_point=self.init_days,start_state=start_state,
                                  integrator=truth_integrator,nr_grids=self.nr_vars)
 
-        self.results = ds
+        self.results[label] = ds
 
-    def write_netcdf(self, path="."):
+    def write_netcdf(self, path="./test_file.nc"):
         """
         Write results to file.
         Results of xarray will be stored in an netcdf4 file.
@@ -73,11 +73,48 @@ class Lorenz(object):
 
         """
 
-        self.results.to_netcdf(path=path, mode='w', format='NETCDF4')
+        if len(self.results) > 0:
+            ds = nc.Dataset(path, 'w', 'NETCDF4')
+
+            irun = 0
+
+            for key in self.results:
+
+                # init create dimensions, variables and set constant values
+                if key == next(iter(self.results.keys())):
+                    ds.createDimension('model_run', len(self.results))
+                    ds.createDimension('time', self.results[key].shape[1])
+                    ds.createDimension('grid', self.results[key].shape[2])
+
+                    # grid is constant for all ensembles
+                    time_var = ds.createVariable('time', 'f8', ('time',))
+                    time_var.units = "hours since model begin"
+
+                    # time is constant for all ensemles
+                    grid_var = ds.createVariable('grid', 'f8', ('grid',))
+                    grid_var.units = "1"
+
+                    value_var = ds.createVariable('value', 'f8', ('model_run', 'time', 'grid'))
+                    value_var.units = "1"
+
+                    # insert constant values
+                    time_var[:] = self.results[key][0, :, 0]
+                    grid_var[:] = self.results[key][0, 0, :]
+
+                # insert model result
+                value_var[irun, :, :] = self.results[key][0, :, :]
+
+                irun += 1
+
+            ds.close()
+            print('method write_netcdf: ' + path)
+
+        else:
+            print('method write_netcdf: nothing to write')
 
 
 if __name__ == "__main__":
-    model = Lorenz(1000, 6, 365)
+    model = Lorenz(1000, 6 , 365)
     model.run_model(label="Test")
     print(model.results["Test"])
     model.write_netcdf()
