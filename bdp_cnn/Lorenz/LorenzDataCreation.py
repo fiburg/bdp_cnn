@@ -62,6 +62,8 @@ class Lorenz(object):
 
 
 
+
+
 if __name__ == "__main__":
     model = Lorenz(1000,6,365)
     model.run_model(label="Test")
