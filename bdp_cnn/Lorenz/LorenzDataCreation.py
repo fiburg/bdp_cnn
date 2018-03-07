@@ -18,13 +18,14 @@ class Lorenz(object):
         """
         Initialize the model.
 
-        :param init_days_d: float: Days before the modelstart. Will be used as initialization.
-        :param stepsize_h: float: size of timesteps to be calculated in hours.
-        :param runtime_d: float: duration of the modelrun in days.
-        :param nr_vars: int: number of gridpoints.
-        :param forcing: Forcing of the model.
-
+        Args:
+            init_days_d: float: Days before the modelstart. Will be used as initialization.
+            stepsize_h: float: size of timesteps to be calculated in hours.
+            runtime_d: float: duration of the modelrun in days.
+            nr_vars:  int: number of gridpoints.
+            forcing:  Forcing of the model.
         """
+
         self.rnd = np.random.RandomState(42)
         self.init_days = init_days_d
         self.step = np.multiply(stepsize_h, np.divide(0.05,6))
@@ -43,11 +44,11 @@ class Lorenz(object):
         The label is the key for the run, to be later found in the results.
 
 
-        :param boundaries: tuple: Within this range the start state of the model will be generated.
-        :param label: str: Name of the run, to get the results by.
+        Args:
+            boundaries:  tuple: Within this range the start state of the model will be generated.
+            label:  str: Name of the run, to get the results by.
 
         """
-
 
         start_state = self.rnd.normal(boundaries[0], boundaries[1], size=(1,self.nr_vars))
 
@@ -59,9 +60,6 @@ class Lorenz(object):
                                  integrator=truth_integrator,nr_grids=self.nr_vars)
 
         self.results[label] = ds
-
-
-
 
 
 if __name__ == "__main__":
