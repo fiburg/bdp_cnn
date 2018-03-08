@@ -93,6 +93,7 @@
             
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Classes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html#functions">Functions</a></li>
 </ul>
 
             
@@ -173,17 +174,18 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="Lorenz.__init__"><a class="viewcode-back" href="../../../generated/bdp_cnn.Lorenz.LorenzDataCreation.Lorenz.html#bdp_cnn.Lorenz.LorenzDataCreation.Lorenz.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">init_days_d</span><span class="p">,</span><span class="n">stepsize_h</span><span class="p">,</span><span class="n">runtime_d</span><span class="p">,</span> <span class="n">nr_vars</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">forcing</span><span class="o">=</span><span class="mi">8</span><span class="p">):</span>
+<div class="viewcode-block" id="Lorenz.__init__"><a class="viewcode-back" href="../../../generated/bdp_cnn.Lorenz.LorenzDataCreation.Lorenz.__init__.html#bdp_cnn.Lorenz.LorenzDataCreation.Lorenz.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">init_days_d</span><span class="p">,</span><span class="n">stepsize_h</span><span class="p">,</span><span class="n">runtime_d</span><span class="p">,</span> <span class="n">nr_vars</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">forcing</span><span class="o">=</span><span class="mi">8</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize the model.</span>
 
-<span class="sd">        :param init_days_d: float: Days before the modelstart. Will be used as initialization.</span>
-<span class="sd">        :param stepsize_h: float: size of timesteps to be calculated in hours.</span>
-<span class="sd">        :param runtime_d: float: duration of the modelrun in days.</span>
-<span class="sd">        :param nr_vars: int: number of gridpoints.</span>
-<span class="sd">        :param forcing: Forcing of the model.</span>
-
+<span class="sd">        Args:</span>
+<span class="sd">            init_days_d: float: Days before the modelstart. Will be used as initialization.</span>
+<span class="sd">            stepsize_h: float: size of timesteps to be calculated in hours.</span>
+<span class="sd">            runtime_d: float: duration of the modelrun in days.</span>
+<span class="sd">            nr_vars:  int: number of gridpoints.</span>
+<span class="sd">            forcing:  Forcing of the model.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">rnd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">init_days</span> <span class="o">=</span> <span class="n">init_days_d</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">stepsize_h</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="mf">0.05</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
@@ -202,11 +204,11 @@
 <span class="sd">        The label is the key for the run, to be later found in the results.</span>
 
 
-<span class="sd">        :param boundaries: tuple: Within this range the start state of the model will be generated.</span>
-<span class="sd">        :param label: str: Name of the run, to get the results by.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            boundaries:  tuple: Within this range the start state of the model will be generated.</span>
+<span class="sd">            label:  str: Name of the run, to get the results by.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-
 
         <span class="n">start_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rnd</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">boundaries</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">boundaries</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">nr_vars</span><span class="p">))</span>
 
@@ -218,7 +220,6 @@
                                  <span class="n">integrator</span><span class="o">=</span><span class="n">truth_integrator</span><span class="p">,</span><span class="n">nr_grids</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nr_vars</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">ds</span></div></div>
-
 
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>

@@ -1,0 +1,28 @@
+Lorenz
+======
+
+.. automodule:: bdp_cnn.Lorenz.LorenzDataCreation
+
+.. currentmodule:: bdp_cnn.Lorenz.LorenzDataCreation
+
+.. autosummary::
+   :toctree: generated
+
+   Lorenz
+
+
+
+
+
+Using CNN for simulating Lorenz
+===============================
+
+.. automodule:: bdp_cnn.Lorenz.CNN_Lorenz
+
+.. currentmodule:: bdp_cnn.Lorenz.CNN_Lorenz
+
+.. autosummary::
+   :toctree: generated
+
+   CNN
+

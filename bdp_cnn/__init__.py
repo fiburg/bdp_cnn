@@ -1,1 +1,1 @@
-from .Lorenz.LorenzDataCreation import Lorenz
+from . import Lorenz

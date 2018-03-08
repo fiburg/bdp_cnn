@@ -35,6 +35,7 @@ import sys
 import os
 module_path = os.path.abspath("../.")
 sys.path.insert(0,module_path)
+print("SYSTEM PATH: %s"%sys.path)
 extensions = [  'sphinx.ext.autodoc',
                 'sphinx.ext.autosummary',
                 'sphinx.ext.doctest',
