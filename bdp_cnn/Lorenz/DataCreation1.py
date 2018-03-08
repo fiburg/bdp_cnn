@@ -14,7 +14,7 @@ def _run_ensemble(model,i):
          Returns a tuple with two values: first value is the loop variable second value is an xarray with the results.
     """
 
-    model.run_model(boundaries=(i,i+0.0005),label=i)
+    model.run_model(boundaries=(-0.0005,+0.0005),label=i)
     return (i,model.results[i])
 
 def creation_main(members,init_time=1000,duration_time=365*10,stepsize=6,cpus=-1):
@@ -50,4 +50,4 @@ def creation_main(members,init_time=1000,duration_time=365*10,stepsize=6,cpus=-1
     return model
 
 if __name__ == "__main__":
-    model  = creation_main(4)
+    model  = creation_main(50)
