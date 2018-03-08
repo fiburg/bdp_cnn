@@ -1,5 +1,7 @@
 
 import numpy as np
+import netCDF4 as nc
+import time
 
 from enkf_lorenz.models import Lorenz96
 from enkf_lorenz.integrator import RK4Integrator
@@ -61,9 +63,56 @@ class Lorenz(object):
 
         self.results[label] = ds
 
+    def write_netcdf(self, path="./test_file.nc"):
+        """
+        Write results to file.
+        Results of xarray will be stored in an netcdf4 file.
+
+        Args:
+            path: str: path for output, optional
+
+        Returns:
+
+        """
+
+        if len(self.results) > 0:
+            ds = nc.Dataset(path, 'w', 'NETCDF4')
+            ds.creation_date = time.asctime()
+
+            for irun, key in enumerate(self.results):
+
+                # init create dimensions, variables and set constant values
+                if irun == 0:
+                    ds.createDimension('model_run', len(self.results))
+                    ds.createDimension('time', self.results[key].shape[1])
+                    ds.createDimension('grid', self.results[key].shape[2])
+
+                    # grid is constant for all ensembles
+                    time_var = ds.createVariable('time', 'f8', ('time',))
+                    time_var.units = "hours since model begin"
+
+                    # time is constant for all ensemles
+                    grid_var = ds.createVariable('grid', 'f8', ('grid',))
+
+                    # insert constant values
+                    time_var[:] = self.results[key].time
+                    grid_var[:] = self.results[key].grid
+
+                # create for specific model runs new value variable
+                value_var = ds.createVariable(str(key), 'f8', ('time', 'grid'))
+
+                # insert model result
+                value_var[:, :] = self.results[key][0, :, :]
+
+            ds.close()
+            print('method write_netcdf: ' + path)
+
+        else:
+            print('method write_netcdf: nothing to write')
 
 if __name__ == "__main__":
-    model = Lorenz(1000,6,365)
+    model = Lorenz(1000, 6 , 365)
     model.run_model(label="Test")
     print(model.results["Test"])
+    model.write_netcdf()
 
