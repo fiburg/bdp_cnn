@@ -13,10 +13,8 @@ class CNN(object):
     def __init__(self, x=None, y=None, split=10000):
         self.model = None
         self.x_train = x
-        self.y_train = y
-        self.data = None
-        self.scaled = None
-        self.scaler = 1
+        self.data = None  # data
+        self.scaler = 1  # factor to scale
         self.test = None
         self.train = None
         self.train_scaled = None
@@ -26,16 +24,6 @@ class CNN(object):
         self.bach_size = 1
         self.split = -split
 
-
-    def run_model(self):
-
-        self.model = Sequential()
-        self.model.add(Dense(units=3, activation='relu', input_dim=np.ndim(self.x_train)))
-        # self.model.add(Dropout(0.5))
-        # self.model.add(Dense(units=1, activation='relu'))
-
-        self.model.compile(loss='mean_squared_error', optimizer='sgd', metrics=['accuracy'])
-        self.model.fit(self.x_train, self.y_train, epochs=5, batch_size=32)
 
     def get_keys(self,file_name):
         """
@@ -75,36 +63,21 @@ class CNN(object):
             x_tmp = x_tmp[:,:]
             x[i,:,:] = x_tmp
 
-
-        # for x_i,y_i in zip(x,y):
-        #     if not "x_new" in locals():
-        #         x_new = x_i
-        #         y_new = y_i
-        #     else:
-        #         x_new = np.concatenate((x_new,x_i))
-        #         y_new = np.concatenate((y_new,y_i))
-
-        self.x_train = x[0,:,0] # pass only one gridpoint for now
-
-    def prepare_data_1_member(self,train=None):
-        if not train:
-            train = self.x_train
-        self.data = self.timeseries_to_supervised(train)
-        self.X = self.data.values[:,1]
-        self.X = self.X.reshape(len(self.X), 1)
-        scaler = MinMaxScaler(feature_range=(-1, 1))
-        scaler = scaler.fit(self.X)
-        scaled_X = scaler.transform(self.X)
-        scaled_series = pandas.Series(scaled_X[:, 0])
-        self.scaled = scaled_series
-        print(scaled_series.head())
-        # invert transform
-        inverted_X = scaler.inverse_transform(scaled_X)
-        inverted_series = pandas.Series(inverted_X[:, 0])
-        print(inverted_series.head())
+        self.x_train = x[0, :, 0]  # pass only one gridpoint for now... [ensemble, time, grid]
 
 
-    def init_lstm(self, batch_size=None, nb_epoch=5, neurons=5):
+    def init_lstm(self, batch_size=None, nb_epoch=5, neurons=20):
+        """
+        set up model (init, comp, fit/train)
+
+        Args:
+            batch_size:
+            nb_epoch:
+            neurons:
+
+        Returns:
+
+        """
         if not batch_size:
             batch_size = self.bach_size
         else:
@@ -245,7 +218,7 @@ if __name__ == "__main__":
     cnn.make_supervised()
     cnn.create_train_test()
     cnn.scale()
-    cnn.init_lstm(batch_size=1,nb_epoch=1,neurons=20)
+    cnn.init_lstm(batch_size=1,nb_epoch=1,neurons=100)
     cnn.predict()
     cnn.walk_forward_validation()
     cnn.report_performance()
