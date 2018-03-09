@@ -63,7 +63,7 @@ class CNN(object):
             x_tmp = x_tmp[:,:]
             x[i,:,:] = x_tmp
 
-        self.x_train = x[0, :, 0]  # pass only one gridpoint for now... [ensemble, time, grid]
+        self.x_train = x[0, :, :]  # pass only one gridpoint for now... [ensemble, time, grid]
 
 
     def init_lstm(self, batch_size=None, nb_epoch=5, neurons=20):
@@ -147,7 +147,7 @@ class CNN(object):
 
     def make_supervised(self, lag=1):
         """
-        Takes a numpy array (1D!!!) as input and creates a second array which lacks the input array behind.
+        Takes a numpy array as input and creates a second array which lacks the input array behind.
         The array lagging behind will be used as input data for the cnn while the other will be
         considered the "Truth".
 
@@ -161,11 +161,13 @@ class CNN(object):
 
         df = pandas.DataFrame(self.x_train)
         self.raw_values = df.values
-        columns = [df.shift(i) for i in range(1, lag + 1)]
-        columns.append(df)
-        df = pandas.concat(columns, axis=1)
-        df.fillna(0, inplace=True)
+        df_shift = pandas.DataFrame(np.roll(self.x_train, lag, axis=0))
+        df = df.iloc[:, 0:40].apply(tuple, axis=1)
+        df_shift = df_shift.iloc[:, 0:40].apply(tuple, axis=1)
+        df = pandas.concat([df_shift, df], axis=1)
+        df = df.iloc[1:]
         self.supervised_values = df
+
 
     def report_performance(self):
 
@@ -211,20 +213,20 @@ if __name__ == "__main__":
     # results = np.subtract(tested[:,0], truth)
     # plt.plot(results)
 
-    import timeit
-    start = timeit.default_timer()
+    #import timeit
+    #start = timeit.default_timer()
     cnn = CNN()
-    cnn.read_netcdf("100_years_1_member.nc")
-    cnn.make_supervised()
-    cnn.create_train_test()
-    cnn.scale()
-    cnn.init_lstm(batch_size=1,nb_epoch=1,neurons=100)
-    cnn.predict()
-    cnn.walk_forward_validation()
-    cnn.report_performance()
-    stop = timeit.default_timer()
-    runtime = stop-start
-    print("Runtime: " )
-    print(runtime)
+    cnn.read_netcdf("100_years_1_member.nc")    # done
+    cnn.make_supervised()   # finn todo
+    #cnn.create_train_test()     # tobi todo
+    #cnn.scale()
+    #cnn.init_lstm(batch_size=1,nb_epoch=1,neurons=100)
+    #cnn.predict()
+    #cnn.walk_forward_validation()
+    #cnn.report_performance()
+    #stop = timeit.default_timer()
+    #runtime = stop-start
+    #print("Runtime: " )
+    #print(runtime)
 
 
