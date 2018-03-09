@@ -12,7 +12,7 @@ class CNN(object):
 
     def __init__(self, x=None, y=None, split=10000):
         self.model = None
-        self.x_train = x
+        self.data_from_netcdf = x
         self.data = None  # data
         self.scaler = 1  # factor to scale
         self.test = None
@@ -23,6 +23,20 @@ class CNN(object):
         self.raw_values = None
         self.bach_size = 1
         self.split = -split
+
+    def __str__(self):
+        attr_list = [self.model, self.data_from_netcdf, self.data, self.scaler, self.test, self.train, self.train_scaled,
+                     self.test_scaled, self.supervised_values, self.raw_values, self.bach_size, self.split]
+
+        attr_names = ["model","data_from_netcdf","data","scaler","test","train","train_scaled",
+                     "test_scaled", "supervised_values","raw_values","bach_size","split"]
+
+        s1 = [str("Following attributes are defined at this stage:")]
+        for name,attr in zip(attr_names,attr_list):
+            if np.any(attr):
+                s1.append(name + " : " + str(attr) )
+
+        return "\n".join(s1)
 
 
     def get_keys(self,file_name):
@@ -63,7 +77,7 @@ class CNN(object):
             x_tmp = x_tmp[:,:]
             x[i,:,:] = x_tmp
 
-        self.x_train = x[0, :, 0]  # pass only one gridpoint for now... [ensemble, time, grid]
+        self.data_from_netcdf = x[0, :, :]  # pass only one gridpoint for now... [ensemble, time, grid]
 
 
     def init_lstm(self, batch_size=None, nb_epoch=5, neurons=20):
@@ -107,10 +121,10 @@ class CNN(object):
         self.scaler = MinMaxScaler(feature_range=(-1, 1))
         self.scaler = self.scaler.fit(self.train)
         # transform train
-        self.train = self.train.values.reshape(self.train.shape[0], self.train.shape[1])
+        self.train = self.train.values.reshape(self.train.shape[0], self.train.shape[1],self.train.shape[2])
         self.train_scaled = self.scaler.transform(self.train)
         # transform test
-        self.test = self.test.values.reshape(self.test.shape[0], self.test.shape[1])
+        self.test = self.test.values.reshape(self.test.shape[0], self.test.shape[1],self.test.shape[2])
         self.test_scaled = self.scaler.transform(self.test)
 
 
@@ -122,7 +136,7 @@ class CNN(object):
         return inverted[0, -1]
 
     def create_train_test(self):
-        self.train, self.test = self.supervised_values[0:self.split], self.supervised_values[-self.split:]
+        self.train, self.test = self.supervised_values[0:self.split,:], self.supervised_values[-self.split:,:]
 
 
     def walk_forward_validation(self):
@@ -159,7 +173,7 @@ class CNN(object):
             pandas dataframe containing the original and the lagging timeseries.
         """
 
-        df = pandas.DataFrame(self.x_train)
+        df = pandas.DataFrame(self.data_from_netcdf)
         self.raw_values = df.values
         columns = [df.shift(i) for i in range(1, lag + 1)]
         columns.append(df)
@@ -198,33 +212,21 @@ class CNN(object):
 
 
 if __name__ == "__main__":
-    from bdp_cnn.Lorenz.DataCreation1 import creation_main
-    from bdp_cnn.Lorenz.LorenzDataCreation import Lorenz
-
-    # x = np.random.rand(int(1e6))
-    # x = np.multiply(x,100)
-    # y = np.divide(x.copy(), 2)
-    # cnn = CNN(x, y)
-    # test = np.random.rand(100)
-    # truth = np.divide(test,2)
-    # tested = cnn.model.predict(test)
-    # results = np.subtract(tested[:,0], truth)
-    # plt.plot(results)
 
     import timeit
     start = timeit.default_timer()
     cnn = CNN()
     cnn.read_netcdf("100_years_1_member.nc")
-    cnn.make_supervised()
-    cnn.create_train_test()
-    cnn.scale()
-    cnn.init_lstm(batch_size=1,nb_epoch=1,neurons=100)
-    cnn.predict()
-    cnn.walk_forward_validation()
-    cnn.report_performance()
-    stop = timeit.default_timer()
-    runtime = stop-start
-    print("Runtime: " )
-    print(runtime)
+    # cnn.make_supervised()
+    # cnn.create_train_test()
+    # cnn.scale()
+    # cnn.init_lstm(batch_size=1,nb_epoch=1,neurons=100)
+    # cnn.predict()
+    # cnn.walk_forward_validation()
+    # cnn.report_performance()
+    # stop = timeit.default_timer()
+    # runtime = stop-start
+    # print("Runtime: " )
+    # print(runtime)
 
 
