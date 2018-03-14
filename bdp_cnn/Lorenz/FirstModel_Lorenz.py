@@ -6,10 +6,10 @@ from netCDF4 import Dataset
 import pandas
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error
-from keras.callbacks import ModelCheckpoint
+from keras.callbacks import ModelCheckpoint, TensorBoard
+
 
 class CNN(object):
-
     def __init__(self, x=None, y=None, split=10000):
 
         self.x_raw = None
@@ -67,7 +67,6 @@ class CNN(object):
 
         return "\n".join(s1)
 
-
     def get_keys(self,file_name):
         """
         Get a list of all keys, excluding "time" and "grid"
@@ -98,6 +97,8 @@ class CNN(object):
         if not keys:
             keys = self.get_keys(file_name)
 
+        self.dataset = file_name
+
         nc = Dataset(file_name)
         dim1,dim2 = np.shape(nc.variables[keys[0]])
         x  = np.zeros([len(keys),dim1,dim2])
@@ -106,8 +107,7 @@ class CNN(object):
             x_tmp = x_tmp[:,:]
             x[i,:,:] = x_tmp
 
-        self.data_from_netcdf = x[0, :1000, :]  # pass only one gridpoint for now... [ensemble, time, grid]
-
+        self.data_from_netcdf = x[0, :, :]  # pass only one gridpoint for now... [ensemble, time, grid]
 
     def init_lstm(self, batch_size=None, nb_epoch=5, neurons=20):
         """
@@ -125,6 +125,9 @@ class CNN(object):
             batch_size = self.bach_size
         else:
             self.bach_size = batch_size
+
+        self.neurons = neurons
+        self.epochs = nb_epoch
         X, y = self.x_train_scaled, self.y_train_scaled
         X = X.reshape(X.shape[0], 1, X.shape[1])
         model = Sequential()
@@ -134,22 +137,24 @@ class CNN(object):
         checkpoint = ModelCheckpoint("weights.{epoch:02d}.hdf5", monitor='val_loss',
                                      save_best_only=False,
                                      save_weights_only=False, mode='auto', period=1)
+        #tb_callback = TensorBoard(log_dir='./tmp/logs/', histogram_freq=0.5, write_images=True, write_grads=True)
         callback_list = [checkpoint]
         for i in range(nb_epoch):
-            model.fit(X, y, epochs=1, batch_size=batch_size, shuffle=False,callbacks=callback_list)
+            model.fit(X, y, epochs=1, batch_size=batch_size,
+                      shuffle=False,
+                      callbacks=callback_list)
             model.reset_states()
         self.model = model
         self.train_reshaped = self.x_train_scaled.reshape(len(self.x_train_scaled), 1, 40)
 
     def predict(self):
-
         self.model.predict(self.train_reshaped, batch_size=self.bach_size)
 
     @staticmethod
     def scale(array):
         scaler = MinMaxScaler(feature_range=(-1, 1))
         scaler = scaler.fit(array)
-        return scaler,scaler.transform(array)
+        return scaler, scaler.transform(array)
 
     def scale_all(self):
         self.train_scaler,self.x_train_scaled = self.scale(self.x_train)
@@ -168,6 +173,8 @@ class CNN(object):
         inverted = scaler.inverse_transform(array)
         return inverted[0, -1]
 
+    def invert_scale2(self,array,scaler):
+        return scaler.inverse_transform(array)
 
     def create_train_test_validation(self):
         """
@@ -183,15 +190,15 @@ class CNN(object):
 
         del self.x_raw, self.y_raw
 
-
     def walk_forward_validation(self):
 
         def forecast_lstm(model, batch_size, X):
             X = X.reshape(1, 1, len(X))
             yhat = model.predict(X, batch_size=batch_size)
-            return yhat[0, 0]
+            return yhat[0, :]
 
-        self.predictions = list()
+        self.predictions = np.zeros([np.shape(self.x_test_scaled)[0],np.shape(self.x_test_scaled)[1]])
+
         for i in range(len(self.x_test_scaled)):
             # make one-step forecast
             X = self.x_test_scaled[i,:]
@@ -199,12 +206,13 @@ class CNN(object):
             self.yhat = yhat
             self.X = X
             # invert scaling
-            yhat = self.invert_scale(X.reshape(1,len(X)), yhat,self.test_scaler)
+            # yhat = self.invert_scale(X.reshape(1,len(X)), yhat,self.test_scaler)
             # store forecast
-            self.predictions.append(yhat)
+            self.predictions[i] = yhat
             # expected = self.raw_values[len(self.train) + i + 1]
             # print('Hour=%d, Predicted=%f, Expected=%f' % (i + 1, yhat, expected))
 
+        self.predictions = self.invert_scale2(self.predictions,self.test_scaler)
 
     def make_supervised(self, lag=1):
         """
@@ -226,39 +234,52 @@ class CNN(object):
 
         del self.data_from_netcdf
 
-
     def report_performance(self):
 
-        rmse = np.sqrt(mean_squared_error(self.raw_values[-self.split:], self.predictions))
+        rmse = np.sqrt(mean_squared_error(self.x_test, self.predictions))
         print('Test RMSE: %.3f' % rmse)
-        # line plot of observed vs predicted
+
+        shape = self.predictions.shape[0]*self.predictions.shape[1]
+        m,b = np.polyfit(self.predictions.reshape(shape),self.y_test.reshape(shape),1)
+        x = self.predictions.reshape(shape)
+        y = np.add(np.multiply(m,x),b)
+
+        line0 = np.linspace(-40,40,100)
+        # scatterplot:
+
+
         fig,ax = plt.subplots()
-        ax.plot(self.raw_values[-self.split:],label="Truth")
-        ax.plot(self.predictions,label="Machine learning")
+        plt.suptitle("Dataset: %s\nNeurons: %i, Epochs: %i\n RMSE: %.3f" % (self.dataset, self.neurons, self.epochs, rmse))
+        ax.plot(self.predictions.reshape(shape),self.y_test.reshape(shape),lw=0,marker=".",color="blue")
+        ax.plot(line0,line0,lw=1,color="black")
+        ax.plot(x,y, '-', label="Regression",color="red",lw=2)
         ax.legend(loc="upper left")
-        plt.savefig("complete.png")
-
-        fig,ax = plt.subplots()
-        ax.plot(self.raw_values[-self.split:],label="Truth")
-        ax.plot(self.predictions,label="Machine learning")
-        ax.set_xlim(0,10000)
-        ax.legend(loc="upper left")
-        plt.savefig("last_10k.png")
-
-        fig, ax = plt.subplots()
-        ax.plot(self.raw_values[-self.split:],label="Truth")
-        ax.plot(self.predictions,label="Machine learning")
-        ax.set_xlim(0, 1000)
-        ax.legend(loc="upper left")
-        plt.savefig("last_1k.png")
+        ax.grid()
+        ax.set_ylabel("Observations")
+        ax.set_xlabel("CNN")
+        ax.set_xlim(-10,20)
+        ax.set_ylim(-10,20)
+        plt.savefig("Scatterplot.png")
 
 
 
+        # contourf plot of differences: (takes AGES!!!)
 
+        # diff = np.subtract(self.predictions,self.y_test)
+        #
+        # levels = np.linspace(-10,10,100)
+        # fig,ax = plt.subplots()
+        # plt.suptitle("Dataset: %s\nNeurons: %i, Epochs: %i\n RMSE: %.3f"%(self.dataset,self.neurons,self.epochs,rmse))
+        # im1 = ax.contourf(diff.transpose(),levels=levels, cmap="bwr")
+        # cb = plt.colorbar(im1)
+        # cb.set_label("Difference of Prediction and Truth")
+        # ax.set_xlabel("Timesteps")
+        # ax.set_ylabel("Gridpoints")
+        #
+        # plt.savefig("difference.png")
 
 
 if __name__ == "__main__":
-
     import timeit
     start = timeit.default_timer()
     cnn = CNN()
@@ -267,7 +288,7 @@ if __name__ == "__main__":
     cnn.create_train_test_validation()      # done
     cnn.scale_all() #done
 
-    cnn.init_lstm(batch_size=1,nb_epoch=1,neurons=100)
+    cnn.init_lstm(batch_size=1,nb_epoch=1,neurons=40)
     cnn.predict()
     cnn.walk_forward_validation()
     cnn.report_performance()
