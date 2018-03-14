@@ -49,16 +49,16 @@ class CNN(object):
         self.train_scaled = None
         self.test_scaled = None
         self.raw_values = None
-        self.bach_size = 1
+        self.batch_size = 1
         self.split = -split
 
 
     def __str__(self):
         attr_list = [self.model, self.data_from_netcdf, self.data, self.scaler, self.test, self.train, self.train_scaled,
-                     self.test_scaled, self.supervised_values, self.raw_values, self.bach_size, self.split]
+                     self.test_scaled, self.supervised_values, self.raw_values, self.batch_size, self.split]
 
         attr_names = ["model","data_from_netcdf","data","scaler","test","train","train_scaled",
-                     "test_scaled", "supervised_values","raw_values","bach_size","split"]
+                     "test_scaled", "supervised_values","raw_values","batch_size","split"]
 
         s1 = [str("Following attributes are defined at this stage:")]
         for name,attr in zip(attr_names,attr_list):
@@ -122,9 +122,9 @@ class CNN(object):
 
         """
         if not batch_size:
-            batch_size = self.bach_size
+            batch_size = self.batch_size
         else:
-            self.bach_size = batch_size
+            self.batch_size = batch_size
 
         self.neurons = neurons
         self.epochs = nb_epoch
@@ -148,7 +148,7 @@ class CNN(object):
         self.train_reshaped = self.x_train_scaled.reshape(len(self.x_train_scaled), 1, 40)
 
     def predict(self):
-        self.model.predict(self.train_reshaped, batch_size=self.bach_size)
+        self.model.predict(self.train_reshaped, batch_size=self.batch_size)
 
     @staticmethod
     def scale(array):
