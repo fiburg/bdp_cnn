@@ -13,9 +13,10 @@ class scale(object):
 
     """
 
-    def __init__(self,is_already_dimensionless=False):
+    def __init__(self,is_already_dimensionless=False,verbose=False):
 
         self.is_dimless = is_already_dimensionless
+        self.verbose = verbose
 
     def __add__(self, other):
         return np.add(self.value,other.value)
@@ -39,20 +40,22 @@ class scale(object):
         return s0+s1+s2
 
     def __print_dim_error(self):
-        if self.is_dimless:
-            s0 = "Can not make %s dimensionless as it already has no dimension."%self.name
+        if self.verbose:
+            if self.is_dimless:
+                s0 = "Can not make %s dimensionless as it already has no dimension."%self.name
 
-        elif not self.is_dimless:
-            s0 = "Can not invert scaling of %s as it is not dimensionless."%self.name
+            elif not self.is_dimless:
+                s0 = "Can not invert scaling of %s as it is not dimensionless."%self.name
 
-        print(s0)
+            print(s0)
 
     def T(self,temp):
+        self.name = "Temperature"
+        self.scaler = 273.15
+        self.value = temp
 
         if not self.is_dimless: # only make dimensionless if not already happend so:
-            self.name = "Temperature"
-            self.scaler = 273.15
-            self.value = np.subtract(np.divide(temp,self.scaler),1)
+            self.value = np.subtract(np.divide(temp, self.scaler), 1)
             self.is_dimless = True
 
         else:
