@@ -46,7 +46,7 @@ class NN(abc.ABC):
             x_tmp = x_tmp[:, :]
             x[i, :, :] = x_tmp
 
-        return x[0, :, :]
+        return x[:, :, :]
 
     @abc.abstractmethod
     def init_model(self):
