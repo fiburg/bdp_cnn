@@ -1,4 +1,5 @@
 import numpy as np
+from sklearn.preprocessing import MinMaxScaler
 
 class scale(object):
 
@@ -51,11 +52,12 @@ class scale(object):
 
     def T(self,temp):
         self.name = "Temperature"
-        self.scaler = 273.15
+        self.scaler = MinMaxScaler(feature_range=(-1,1))
+        self.scaler = self.scaler.fit(temp)
         self.value = temp
 
         if not self.is_dimless: # only make dimensionless if not already happend so:
-            self.value = np.subtract(np.divide(temp, self.scaler), 1)
+            self.value = self.scaler.transform(temp)
             self.is_dimless = True
 
         else:
@@ -65,10 +67,11 @@ class scale(object):
 
 
 
+
     def invert(self):
 
         if self.is_dimless: # only invert if it's invertable:
-            self.value = np.multiply(np.add(self.value,1),self.scaler)
+            self.value = self.scaler.inverse_transform(self.value)
             self.is_dimless = False
         else:
             self.__print_dim_error()

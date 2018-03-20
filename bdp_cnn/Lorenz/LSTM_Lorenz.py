@@ -33,25 +33,30 @@ class LSTM_model(NN):
         self.time_steps = time_steps
 
         if auto_batch_size:
-            self.batch_size = self.data.value.shape[0]
+            self.batch_size = 32
 
         # setup model:
 
         self.model = Sequential()
 
 
-        self.model.add(LSTM(units=self.batch_size,
+        self.model.add(LSTM(units=self.data_dim,
                             batch_size=self.batch_size,
                             # return_sequences=True,
-                            stateful=True,
-                            batch_input_shape=(self.batch_size,self.time_steps, self.data_dim)))
-                            # input_shape=(10,self.data_dim)))
+                            stateful=False,
+                            batch_input_shape=(self.batch_size,self.time_steps, self.data_dim),
+                            input_shape=(self.time_steps,self.data_dim))),
         self.model.add(Dense(self.data_dim,activation="relu"))
         self.model.compile(loss='mean_squared_error', optimizer='adam')
         return self
 
     def reshape_data(self):
         self.x = self.data.value
+
+    def data2train(self):
+        dl = np.shape(self.data.value)[0]
+        self.data.value = self.data.value[:int(dl/3*2)]
+
 
 
     def train_model(self):
@@ -61,11 +66,18 @@ class LSTM_model(NN):
                 self.x[:,i:i+self.time_steps,:],
                 np.reshape(self.x[:,i+self.time_steps,:],(self.batch_size,self.data_dim)))
 
+    def fit_model(self):
+        x = np.reshape(self.x,(1,self.x.shape[0],self.x.shape[1]))
+        y = x[::self.time_steps]
+        self.y = y
+
+        self.model.fit(x,y,batch_size=self.batch_size,shuffle=False)
+
 
     def walk_forward_validation(self):
 
         def forecast_lstm(model, batch_size, X):
-            X = X.reshape(100, 10, 40)
+            X = X.reshape(1,10, 40)
             yhat = model.predict(X, batch_size=batch_size)
             return yhat[0, :]
 
@@ -73,7 +85,7 @@ class LSTM_model(NN):
 
         for i in range(len(self.x)):
             # make one-step forecast
-            X = self.x[:,i:i+10,:]
+            X = self.x[i:i+10,:]
             yhat = forecast_lstm(self.model, 100, X)
             self.yhat = yhat
             self.X = X
@@ -101,12 +113,13 @@ class LSTM_model(NN):
 if __name__ == "__main__":
 
     model = LSTM_model(neurons=100, nb_epoch=2)
-    data = np.add(model.read_netcdf("100_times_1000_days.nc"),273.15) # temperatures in Kelvin instead of Celsius
+    data = np.add(model.read_netcdf("100_years_1_member.nc"),273.15) # temperatures in Kelvin instead of Celsius
     temp = scale().T(data)
     model.data = temp
-    model.init_model(time_steps=10)
+    model.data2train()
+    model.init_model(time_steps=10,auto_batch_size=True)
     model.reshape_data()
-    model.train_model()
+    model.fit_model()
     model.walk_forward_validation()
 
 
