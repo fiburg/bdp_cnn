@@ -4,24 +4,25 @@ import numpy as np
 
 from keras.models import Sequential
 from keras.layers import Dense,LSTM
+from keras.preprocessing.sequence import TimeseriesGenerator
+
+import matplotlib.pyplot as plt
+from scipy.stats import gaussian_kde
 
 
 class LSTM_model(NN):
 
-    def __init__(self,data=None,batch_size=None,nb_epoch=None,neurons=None):
+    def __init__(self,data=None,batch_size=None,nb_epoch=None,neurons=None,time_steps=None):
         self.data = data
         self.batch_size = batch_size
         self.nb_epoch = nb_epoch
         self.neurons = neurons
         self.data_dim = 40
-
-    def batch_size_avail(self):
-
-        return list(np.where(np.mod([x for x in range(len(self.data))],self.batch_size) == 0))
+        self.time_steps=time_steps
 
 
 
-    def init_model(self,time_steps,auto_batch_size=True,batch_size=None,nb_epoch=None,neurons=None):
+    def init_model(self,batch_size=None,nb_epoch=None,neurons=None):
         # get arguments:
         if batch_size:
             self.batch_size = batch_size
@@ -30,48 +31,69 @@ class LSTM_model(NN):
         if neurons:
             self.neurons = neurons
 
-        self.time_steps = time_steps
 
-        if auto_batch_size:
-            self.batch_size = 32
+
+        assert self.neurons
+        assert self.nb_epoch
+        assert self.batch_size
+        assert self.time_steps
+        assert self.data_dim
 
         # setup model:
 
         self.model = Sequential()
-
-
-        self.model.add(LSTM(units=self.data_dim,
+        self.model.add(LSTM(units=self.neurons,
                             batch_size=self.batch_size,
                             # return_sequences=True,
                             stateful=False,
-                            batch_input_shape=(self.batch_size,self.time_steps, self.data_dim),
                             input_shape=(self.time_steps,self.data_dim))),
-        self.model.add(Dense(self.data_dim,activation="relu"))
+        self.model.add(Dense(self.data_dim))
         self.model.compile(loss='mean_squared_error', optimizer='adam')
         return self
 
-    def reshape_data(self):
-        self.x = self.data.value
 
-    def data2train(self):
-        dl = np.shape(self.data.value)[0]
-        self.data.value = self.data.value[:int(dl/3*2)]
+    def createGenerators(self):
 
+        f0 = 2/3 * len(self.data.value)+27
+        f1 = 5/6 * len(self.data.value)+5
 
+        self.train_gen = TimeseriesGenerator(
+            self.data.value[:int(f0)], self.data.value[:int(f0)],
+            sampling_rate=1,shuffle=False,
+            length=self.time_steps, batch_size=self.batch_size
+        )
+        self.valid_gen = TimeseriesGenerator(
+            self.data.value[int(f0):int(f1)], self.data.value[int(f0):int(f1)],
+            sampling_rate=1,shuffle=False,
+            length=self.time_steps, batch_size=self.batch_size
+        )
 
-    def train_model(self):
+        self.test_gen = TimeseriesGenerator(
+            self.data.value[int(f1):], self.data.value[int(f1):],
+            sampling_rate=1,shuffle=False,
+            length=self.time_steps, batch_size=1
+        )
 
-        for i in np.arange(0,1000,step=self.time_steps):
-            self.model.train_on_batch(
-                self.x[:,i:i+self.time_steps,:],
-                np.reshape(self.x[:,i+self.time_steps,:],(self.batch_size,self.data_dim)))
 
     def fit_model(self):
-        x = np.reshape(self.x,(1,self.x.shape[0],self.x.shape[1]))
-        y = x[::self.time_steps]
-        self.y = y
+        self.model.fit_generator(self.train_gen,shuffle=False,epochs=self.nb_epoch,
+                                 validation_data=self.valid_gen,verbose=1)
 
-        self.model.fit(x,y,batch_size=self.batch_size,shuffle=False)
+        self.__init_pred_model()
+
+    def __init_pred_model(self):
+        self.training_model = self.model
+        weights = self.training_model.get_weights()
+
+        self.model = Sequential()
+        self.model.add(LSTM(units=self.neurons,
+                            batch_size=1,
+                            # return_sequences=True,
+                            stateful=False,
+                            input_shape=(self.time_steps,self.data_dim))),
+        self.model.add(Dense(self.data_dim))
+        self.model.set_weights(weights)
+        self.model.compile(loss='mean_squared_error', optimizer='adam')
 
 
     def walk_forward_validation(self):
@@ -94,10 +116,22 @@ class LSTM_model(NN):
             # store forecast
             self.predictions.append(scale(is_already_dimensionless=True).T(yhat).invert().value)
 
+    def evaluate(self):
+
+        print("Evaluating the model...")
+        py = np.zeros([len(self.test_gen),40])
+        for i in range(len(self.test_gen)):
+            py[i] = (self.test_gen[i][1][0][:])
+
+        preds = self.model.predict_generator(self.test_gen)
+        # print("Truth: %.5f   | Prediction: %.5f "%(test_y*scaler,p[0]*scaler))
+        # pred_model.evaluate_generator(test_gen)
 
 
-    def predict(self):
-        model.predict()
+        return py,preds
+
+    def predict(self,value):
+        self.model.predict(value)
 
 
     def scale(self,var="T"):
@@ -105,22 +139,66 @@ class LSTM_model(NN):
 
 
 
-    def scale_invert(self):
-        pass
+    def scale_invert(self,value):
+        ret = self.data.scaler.inverse_transform(value)
 
+        return ret
+
+    def present(self,truth,preds):
+        print("plotting Results...")
+
+
+        fig, ax = plt.subplots(figsize=(7,4))
+        fig.suptitle("LSTM with %i neurons, %i batchsize,\n %i epochs and %i timesteps" %
+                     (self.neurons, self.batch_size, self.nb_epoch, self.time_steps))
+
+        x = truth[:,:]
+        y = preds[:,:]
+
+        # print("reshaping x and y...")
+        # x = x.reshape(x.shape[0] * x.shape[1])
+        # y = y.reshape(y.shape[0] * y.shape[1])
+
+
+        ax.scatter(x[:,:],y[:,:],alpha=0.09)
+
+
+        ax.set_xlabel("Lorenz-Truth Temperature [K]")
+        ax.set_ylabel("LSTM-Prediction Temperature[K]")
+        ax.set_xlim(260, 300)
+        ax.set_ylim(260, 300)
+        ax.plot(np.linspace(260,300,100),np.linspace(260,300,100),lw=1,color="black")
+        # plt.legend(ncol=4,fancybox=True)
+
+
+        print("\t saving figure...")
+        plt.savefig("LSTM_%ineurons_%ibatchsize_%iepochs_%itimesteps.png"%
+                    (self.neurons,self.batch_size,self.nb_epoch,self.time_steps),dpi=400)
+
+
+
+
+def autorun(neurons,epochs,time_steps,batch_size):
+    model = LSTM_model(neurons=neurons, nb_epoch=epochs, time_steps=time_steps, batch_size=batch_size)
+    data = np.add(model.read_netcdf("100_years_1_member.nc"), 273.15)  # temperatures in Kelvin instead of Celsius
+    temp = scale().T(data)
+    model.data = temp
+    model.createGenerators()
+    model.init_model()
+    model.fit_model()
+    truth, preds = model.evaluate()
+    truth = model.scale_invert(truth)
+    preds = model.scale_invert(preds)
+
+    model.present(truth, preds)
 
 
 if __name__ == "__main__":
 
-    model = LSTM_model(neurons=100, nb_epoch=2)
-    data = np.add(model.read_netcdf("100_years_1_member.nc"),273.15) # temperatures in Kelvin instead of Celsius
-    temp = scale().T(data)
-    model.data = temp
-    model.data2train()
-    model.init_model(time_steps=10,auto_batch_size=True)
-    model.reshape_data()
-    model.fit_model()
-    model.walk_forward_validation()
+    # for time_steps in [2,5,10,20,50,100]:
+        for neurons in np.arange(50,300,50):
+            for epochs in [1,5,10]:
+                autorun(neurons=neurons,time_steps=10,epochs=epochs,batch_size=50)
 
 
 

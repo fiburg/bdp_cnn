@@ -52,6 +52,8 @@ class scale(object):
 
     def T(self,temp):
         self.name = "Temperature"
+
+
         self.scaler = MinMaxScaler(feature_range=(-1,1))
         self.scaler = self.scaler.fit(temp)
         self.value = temp
@@ -69,6 +71,8 @@ class scale(object):
 
 
     def invert(self):
+
+
 
         if self.is_dimless: # only invert if it's invertable:
             self.value = self.scaler.inverse_transform(self.value)
