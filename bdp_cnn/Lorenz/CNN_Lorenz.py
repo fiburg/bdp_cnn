@@ -11,17 +11,18 @@ class CNN(NN):
     Convolutional neural network (CNN) for timeseries prediction with using the Lorenz model.
     """
 
-    def __init__(self, nb_filters=1, filter_size=(2, 1), grid_size=(40, 1)):
+    def __init__(self):
+        self.model = None
+        self.init_model()
+
+    def init_model(self, nb_features=1, filter_size=(2, 1), grid_size=(40, 1)):
         """
         Initialisation of CNN model
 
         Args:
-            nb_filters (int): The number of different filters to learn.
+            nb_features (int): The number of different filters to learn.
             filter_size: The filter size
-            grid_size:
-
-        Returns:
-
+            grid_size: input shape
         """
 
         """
@@ -32,13 +33,13 @@ class CNN(NN):
         self.model = Sequential()
         # input_shape. tuple does not include the sample axis
         # padding. zero padding is activated, thus the output shape persits
-        self.model.add(Conv2D(filters=nb_filters,
+        self.model.add(Conv2D(filters=nb_features,
                          kernel_size=filter_size,
                          activation='relu',
                          padding='same',
                          input_shape=(grid_size[0], grid_size[1], 1)))
 
-        #model.add(Dense(grid_size[0], activation='linear'))
+        #self.model.add(Dense(1))
 
         self.model.compile(loss='mse', optimizer='adam')
 
@@ -62,7 +63,7 @@ class CNN(NN):
         """
         Scale of input data
         """
-        scaler = MinMaxScaler(feature_range=(-1, 1))
+        scaler = MinMaxScaler(feature_range=(0, 1))
         scaler = scaler.fit(array)
         return scaler, scaler.transform(array)
 
@@ -90,7 +91,7 @@ class CNN(NN):
 
         return train, test, val
 
-    def analysis_scatter(self, y_test, y_pred):
+    def analysis_scatter(self, ytest, ypred):
         shape = ypred.shape[0] * ypred.shape[1]
 
         rmse = np.sqrt(mean_squared_error(ytest.reshape(shape), ypred.reshape(shape)))
@@ -108,8 +109,8 @@ class CNN(NN):
         ax.grid()
         ax.set_ylabel("Test")
         ax.set_xlabel("Prediction")
-        ax.set_xlim(-1, 1)
-        ax.set_ylim(-1, 1)
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
         plt.savefig("CNN_scatter.png")
 
 if __name__ == "__main__":
@@ -139,3 +140,5 @@ if __name__ == "__main__":
 
     # performance analysis
     cnn.analysis_scatter(ytest, ypred)
+
+    cnn.model.summary()
