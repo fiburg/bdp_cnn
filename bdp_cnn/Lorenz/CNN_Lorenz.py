@@ -2,7 +2,7 @@ from bdp_cnn.Lorenz.NN_Lorenz import NN
 from keras.layers import Conv2D, Input, Dense, Lambda
 from keras.models import Model, Sequential
 from keras.callbacks import TensorBoard
-from tensorflow import pad, constant
+import tensorflow as tf
 from keras import optimizers
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error
@@ -14,14 +14,16 @@ class CNN(NN):
     Convolutional neural network (CNN) for timeseries prediction with using the Lorenz model.
     """
 
-    def __init__(self, epochs=3, batch=64, filter_length=2):
+    def __init__(self, neurons=1, epochs=1, batch=50, filter_size=(3, 1), time_steps=1):
         self.model = None
         self.epochs = epochs
         self.batch = batch
-        self.filter = filter_length
-        self.init_model()
+        self.filter = filter_size
+        self.neurons = neurons
+        self.time_steps = time_steps
+        self.init_model(nb_filters=self.neurons, filter_size=self.filter)
 
-    def init_model(self, nb_filters=1, filter_size=(5, 1), grid_size=(40, 1)):
+    def init_model(self, nb_filters, filter_size, grid_size=(40, 1)):
         """
         Initialisation of CNN model
 
@@ -33,21 +35,45 @@ class CNN(NN):
 
         inputs = Input(shape=(grid_size[0], grid_size[1], 1))
 
-        paddings = constant([[0, 0], [2, 2], [0, 0], [0, 0]])
-        # currently zero padding, replace CONSTANT with REFLECT
-        padding_ref = Lambda(lambda t: pad(t, paddings, "CONSTANT"))(inputs)
+        # padding for input grid
+        paddings = tf.constant([[0, 0], [1, 1], [0, 0], [0, 0]])
+        # execution of reflection padding
+        padding_first = Lambda(lambda t: tf.pad(t, paddings, "REFLECT"))(inputs)
 
         conv2d_first = Conv2D(filters=nb_filters,
-                         kernel_size=filter_size,
-                         activation='relu',
-                         padding="valid")(padding_ref)
+                              kernel_size=filter_size,
+                              activation='relu',
+                              padding="valid")(padding_first)
+
+        padding_second = Lambda(lambda t: tf.pad(t, paddings, "REFLECT"))(conv2d_first)
+
+        conv2d_second = Conv2D(filters=1,
+                               kernel_size=filter_size,
+                               activation='hard_sigmoid',
+                               padding="valid")(padding_second)
+
+        print(inputs)
+        print(padding_first)
+        print(conv2d_first)
+        print(padding_second)
+        print(conv2d_second)
 
         # input_shape. tuple does not include the sample axis
-        self.model = Model(inputs=inputs, outputs=conv2d_first)
+        self.model = Model(inputs=inputs, outputs=conv2d_second)
 
         opt = optimizers.Adadelta()
 
-        self.model.compile(loss='mse', optimizer=opt, metrics=['acc', 'mae'])
+        self.model.compile(loss='mae', optimizer=opt, metrics=['mae'])
+
+    """
+    def padding2d(self, tensor, paddings=((1, 1), (0, 0))):
+        t_left = tf.manip.roll(tensor, paddings[0][0], axis=1)
+        t_right = tf.manip.roll(tensor, -paddings[0][1], axis=1)
+        t_up = tf.manip.roll(tensor, paddings[1][0], axis=2)
+        t_down = tf.manip.roll(tensor, -paddings[1][1], axis=2)
+        t_pad = tf.concat([t_left])
+        return tensor
+    """
 
     def predict(self, x_test):
         """
@@ -112,24 +138,32 @@ class CNN(NN):
 
         rmse = np.sqrt(mean_squared_error(ytest.reshape(shape), ypred.reshape(shape)))
 
-        m, b = np.polyfit(ypred.reshape(shape), ytest.reshape(shape), 1)
-        x = ypred.reshape(shape)
-        y = np.add(np.multiply(m, x), b)
+        m, b = np.polyfit(ytest.reshape(shape), ypred.reshape(shape), 1)
+        x = ytest.reshape(shape)
+        yreg = np.add(np.multiply(m, x), b)
 
-        fig, ax = plt.subplots()
-        plt.title('CNN, filter size {0:2d}, epochs {1:2d}, batch size {2:2d}, RMSE {3:4.3f}, zero padding'.format(self.filter,
-                                                                                                                 self.epochs,
-                                                                                                                 self.batch,
-                                                                                                                 rmse))
-        ax.plot(ypred.reshape(shape), ytest.reshape(shape), lw=0, marker=".", color="blue")
-        ax.plot(x, y, '-', label="Regression", color="red", lw=2)
+        print("plotting Results...")
+
+        fig, ax = plt.subplots(figsize=(7, 4))
+        fig.suptitle(
+            'CNN with {0:d} neurons, {1:d} filtersize, {2:d} batchsize,\n {3:d} epochs and {4:d} timesteps: RMSE = {5:5.4f}'.format(self.neurons,
+                                                                                                                  self.filter[0],
+                                                                                                                  self.batch,
+                                                                                                                  self.epochs,
+                                                                                                                  self.time_steps,
+                                                                                                                  rmse))
+        ax.plot(ytest.reshape(shape), ypred.reshape(shape), lw=0, marker=".", color="blue", alpha=0.09)
+        ax.plot(x, yreg, '-', label="Regression", color="red", lw=2)
         ax.legend(loc="upper left")
         ax.grid()
-        ax.set_ylabel("Test")
-        ax.set_xlabel("Prediction")
+        ax.set_xlabel("Test")
+        ax.set_ylabel("Prediction")
         ax.set_xlim(0, 1)
         ax.set_ylim(0, 1)
-        plt.savefig("CNN_scatter.png")
+        print("\t saving figure...")
+        plt.savefig("CNN_%ineurons_%ifilter_%ibatchsize_%iepochs_%itimesteps.png" %
+                    (self.neurons, self.filter[0], self.batch, self.epochs, self.time_steps), dpi=400)
+
 
 if __name__ == "__main__":
     cnn = CNN()
