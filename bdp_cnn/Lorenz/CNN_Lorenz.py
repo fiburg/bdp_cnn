@@ -14,7 +14,7 @@ class CNN(NN):
     Convolutional neural network (CNN) for timeseries prediction with using the Lorenz model.
     """
 
-    def __init__(self, neurons=1, epochs=1, batch=50, filter_size=(3, 1), time_steps=1):
+    def __init__(self, neurons=150, epochs=10, batch=50, filter_size=(5, 1), time_steps=1):
         self.model = None
         self.epochs = epochs
         self.batch = batch
@@ -24,7 +24,7 @@ class CNN(NN):
 
         self.init_model(nb_filters=self.neurons, filter_size=self.filter, time_steps=time_steps)
 
-    def init_model(self, nb_filters=1, filter_size=(3, 1), grid_size=(40, 1), time_steps=1):
+    def init_model(self, nb_filters=100, filter_size=(3, 1), grid_size=(40, 1), time_steps=1):
         """
         Initialisation of CNN model
 
@@ -37,7 +37,7 @@ class CNN(NN):
         inputs = Input(shape=(grid_size[0], 1, 1))
 
         # padding for input grid
-        paddings = tf.constant([[0, 0], [1, 1], [0, 0], [0, 0]])
+        paddings = tf.constant([[0, 0], [2, 2], [0, 0], [0, 0]])
         # execution of reflection padding
         padding_first = Lambda(lambda t: tf.pad(t, paddings, "REFLECT"))(inputs)
 
@@ -136,6 +136,7 @@ class CNN(NN):
         shape = ypred.shape[0] * ypred.shape[1]
 
         rmse = np.sqrt(mean_squared_error(ytest.reshape(shape), ypred.reshape(shape)))
+        corr = np.corrcoef(ytest.reshape(shape), ypred.reshape(shape))
 
         m, b = np.polyfit(ytest.reshape(shape), ypred.reshape(shape), 1)
         x = range(-22, 22, 1)
@@ -145,55 +146,63 @@ class CNN(NN):
 
         fig, ax = plt.subplots(figsize=(7, 4))
         fig.suptitle(
-            'CNN with {0:d} neurons, {1:d} filtersize, {2:d} batchsize,\n {3:d} epochs and {4:d} timesteps: RMSE = {5:5.4f}'.format(self.neurons,
+            'CNN with {0:d} filter, {1:d} filtersize, {2:d} batchsize,\n {3:d} epochs and {4:d} timesteps: RMSE = {5:5.4f} and CORR = {6:8.6f}'.format(self.neurons,
                                                                                                                   self.filter[0],
                                                                                                                   self.batch,
                                                                                                                   self.epochs,
                                                                                                                   self.time_steps,
-                                                                                                                  rmse))
-        ax.plot(ytest.reshape(shape), ypred.reshape(shape), lw=0, marker=".", color="blue", alpha=0.09)
+                                                                                                                  rmse, corr[0, 1]))
+        ax.plot(ytest.reshape(shape), ypred.reshape(shape), lw=0, marker=".", color="blue", alpha=0.05, markeredgewidth=0.0)
         ax.plot(x, yreg, '-', label="Regression", color="red", lw=2)
         ax.legend(loc="upper left")
         ax.grid()
         ax.set_xlabel("Test")
         ax.set_ylabel("Prediction")
-        ax.set_xlim(-20, 20)
-        ax.set_ylim(-20, 20)
+        ax.set_xlim(-10, 20)
+        ax.set_ylim(-10, 20)
         print("\t saving figure...")
         plt.savefig("CNN_%ineurons_%ifilter_%ibatchsize_%iepochs_%itimesteps.png" %
                     (self.neurons, self.filter[0], self.batch, self.epochs, self.time_steps), dpi=400)
 
 
 if __name__ == "__main__":
-    cnn = CNN()
+    for neurons in [150, 200, 250]:
+        for epochs in [10]:
+            cnn = CNN(neurons=neurons, epochs=epochs)
 
-    # data handling
-    data = cnn.read_netcdf("100_years_1_member.nc")
+            # data handling
+            data = cnn.read_netcdf("100_years_1_member.nc")
 
-    x = data.copy()
-    y = np.roll(data.copy(), 1, axis=0)
+            x = data.copy()
+            y = np.roll(data.copy(), 1, axis=0)
 
-    xscaler, x = cnn.scale(x)
-    yscaler, y = cnn.scale(y)
+            xscaler, x = cnn.scale(x)
+            yscaler, y = cnn.scale(y)
 
-    x = np.reshape(x, (x.shape[0], x.shape[1], 1, 1))
-    y = np.reshape(y, (y.shape[0], y.shape[1], 1, 1))
+            x = np.reshape(x, (x.shape[0], x.shape[1], 1, 1))
+            y = np.reshape(y, (y.shape[0], y.shape[1], 1, 1))
 
-    xtrain, xtest, xval = cnn.split_ds(x)
-    ytrain, ytest, yval = cnn.split_ds(y)
+            xtrain, xtest, xval = cnn.split_ds(x)
+            ytrain, ytest, yval = cnn.split_ds(y)
 
-    # train model
+            # train model
 
-    cnn.fit(xtrain, ytrain, xval, yval)
+            cnn.fit(xtrain, ytrain, xval, yval)
 
-    # prediction
-    ypred = cnn.predict(xtest)
+            # prediction
+            ypred = cnn.predict(xtest)
 
-    # invert scaling
-    ypred = cnn.scale_invert(yscaler, ypred)
-    ytest = cnn.scale_invert(yscaler, ytest)
+            # invert scaling
+            ypred = cnn.scale_invert(yscaler, ypred)
+            ytest = cnn.scale_invert(yscaler, ytest)
 
-    # performance analysis
-    cnn.analysis_scatter(ytest, ypred)
+            # performance analysis
+            cnn.analysis_scatter(ytest, ypred)
 
-    cnn.model.summary()
+            cnn.model.summary()
+            cnn = None
+            x = None
+            y = None
+            xscaler = None
+            yscaler = None
+            ypred = None
