@@ -1,6 +1,6 @@
 from bdp_cnn.Lorenz.NN_Lorenz import NN
-from keras.layers import Conv2D, Input, Dense, InputLayer
-from keras.models import Model
+from keras.layers import Conv2D, Input, Dense, Lambda
+from keras.models import Model, Sequential
 from keras.callbacks import TensorBoard
 from tensorflow import pad, constant
 from keras import optimizers
@@ -33,18 +33,17 @@ class CNN(NN):
 
         inputs = Input(shape=(grid_size[0], grid_size[1], 1))
 
-        conv2d_first = Conv2D(filters=nb_filters,
-                         kernel_size=filter_size,
-                         activation='relu')(inputs)
-
         paddings = constant([[0, 0], [2, 2], [0, 0], [0, 0]])
         # currently zero padding, replace CONSTANT with REFLECT
-        padding_ref = InputLayer(input_tensor=pad(conv2d_first, paddings, "CONSTANT"))
+        padding_ref = Lambda(lambda t: pad(t, paddings, "CONSTANT"))(inputs)
 
-        # Tensorflow tensor is not accepted... Output tensors to a Model must be Keras tensors
+        conv2d_first = Conv2D(filters=nb_filters,
+                         kernel_size=filter_size,
+                         activation='relu',
+                         padding="valid")(padding_ref)
 
         # input_shape. tuple does not include the sample axis
-        self.model = Model(inputs=inputs, outputs=padding_ref)
+        self.model = Model(inputs=inputs, outputs=conv2d_first)
 
         opt = optimizers.Adadelta()
 
