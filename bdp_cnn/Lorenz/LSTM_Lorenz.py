@@ -8,6 +8,8 @@ from keras.preprocessing.sequence import TimeseriesGenerator
 
 import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde
+from sklearn.metrics import mean_squared_error
+import timeit
 
 
 class LSTM_model(NN):
@@ -175,10 +177,48 @@ class LSTM_model(NN):
         plt.savefig("LSTM_%ineurons_%ibatchsize_%iepochs_%itimesteps.png"%
                     (self.neurons,self.batch_size,self.nb_epoch,self.time_steps),dpi=400)
 
+    def analysis_scatter(self, ytest, ypred,runtime):
+        print(ytest.shape)
+        print(ypred.shape)
+
+        shape = ypred.shape[0] * ypred.shape[1]
+
+        rmse = np.sqrt(mean_squared_error(ytest.reshape(shape), ypred.reshape(shape)))
+        corr = np.corrcoef(ytest.reshape(shape), ypred.reshape(shape))
+
+        m, b = np.polyfit(ytest.reshape(shape), ypred.reshape(shape), 1)
+        x = range(-22, 22, 1)
+        yreg = np.add(np.multiply(m, x), b)
+
+        print("plotting Results...")
+
+        fig, ax = plt.subplots(figsize=(7, 4))
+        fig.suptitle(
+            'CNN with {0:d} filter, {2:d} batchsize,\n {3:d} epochs and {4:d} timesteps: RMSE = {5:5.4f} '\
+            'and CORR = {6:8.6f},\n runtume = {7:.2f} '.format(
+                self.neurons,
+                self.batch_size,
+                self.nb_epoch,
+                self.time_steps,
+                rmse, corr[0, 1],runtime))
+        ax.plot(ytest.reshape(shape), ypred.reshape(shape), lw=0, marker=".", color="blue", alpha=0.05,
+                markeredgewidth=0.0)
+        ax.plot(x, yreg, '-', label="Regression", color="red", lw=2)
+        ax.legend(loc="upper left")
+        ax.grid()
+        ax.set_xlabel("Test")
+        ax.set_ylabel("Prediction")
+        ax.set_xlim(-10, 20)
+        ax.set_ylim(-10, 20)
+        print("\t saving figure...")
+        plt.savefig("Images/CNN_%ineurons_%ifilter_%ibatchsize_%iepochs_%itimesteps.png" %
+                    (self.neurons, self.filter[0], self.batch, self.epochs, self.time_steps), dpi=400)
+
 
 
 
 def autorun(neurons,epochs,time_steps,batch_size):
+    start = timeit.default_timer()
     model = LSTM_model(neurons=neurons, nb_epoch=epochs, time_steps=time_steps, batch_size=batch_size)
     data = np.add(model.read_netcdf("100_years_1_member.nc"), 273.15)  # temperatures in Kelvin instead of Celsius
     temp = scale().T(data)
@@ -189,9 +229,11 @@ def autorun(neurons,epochs,time_steps,batch_size):
     truth, preds = model.evaluate()
     truth = model.scale_invert(truth)
     preds = model.scale_invert(preds)
+    stop = timeit.default_timer()
+    runtime = stop-start
 
-    model.present(truth, preds)
-
+    # model.present(truth, preds)
+    model.analysis_scatter(truth,preds,runtime)
 
 if __name__ == "__main__":
 
