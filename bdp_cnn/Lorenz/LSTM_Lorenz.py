@@ -194,8 +194,8 @@ class LSTM_model(NN):
 
         fig, ax = plt.subplots(figsize=(7, 4))
         fig.suptitle(
-            'CNN with {0:d} filter, {2:d} batchsize,\n {3:d} epochs and {4:d} timesteps: RMSE = {5:5.4f} '\
-            'and CORR = {6:8.6f},\n runtume = {7:.2f} '.format(
+            'LSTM with {0} neurons, {1} batchsize, {2} epochs and {3} timesteps\n RMSE = {4:.3f} '\
+            'and CORR = {5:.3f}, runtume = {6:.2f} '.format(
                 self.neurons,
                 self.batch_size,
                 self.nb_epoch,
@@ -211,8 +211,8 @@ class LSTM_model(NN):
         ax.set_xlim(-10, 20)
         ax.set_ylim(-10, 20)
         print("\t saving figure...")
-        plt.savefig("Images/CNN_%ineurons_%ifilter_%ibatchsize_%iepochs_%itimesteps.png" %
-                    (self.neurons, self.filter[0], self.batch, self.epochs, self.time_steps), dpi=400)
+        plt.savefig("Images/CNN_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
+                    (self.neurons, self.batch_size, self.nb_epoch, self.time_steps), dpi=400)
 
 
 
@@ -220,7 +220,7 @@ class LSTM_model(NN):
 def autorun(neurons,epochs,time_steps,batch_size):
     start = timeit.default_timer()
     model = LSTM_model(neurons=neurons, nb_epoch=epochs, time_steps=time_steps, batch_size=batch_size)
-    data = np.add(model.read_netcdf("100_years_1_member.nc"), 273.15)  # temperatures in Kelvin instead of Celsius
+    data = model.read_netcdf("100_years_1_member.nc") # temperatures in Kelvin instead of Celsius
     temp = scale().T(data)
     model.data = temp
     model.createGenerators()
