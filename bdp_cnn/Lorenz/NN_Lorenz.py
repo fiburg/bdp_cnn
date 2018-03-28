@@ -8,7 +8,7 @@ class NN(abc.ABC):
     Abstract class for neural network implemention like CNN or LSTM.
     """
 
-    def get_keys(self,file_name):
+    def get_keys(self, file_name):
         """
         Get a list of all keys, excluding "time" and "grid"
 

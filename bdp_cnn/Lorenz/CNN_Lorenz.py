@@ -31,38 +31,37 @@ class CNN(NN):
 
         Args:
             nb_filters (int): The number of different filters to learn.
-            filter_size: The filter size
+            filter_size: The filter size, needs to be uneven
             grid_size: shape of input
+            time_steps: number of time steps, not used in this version
         """
 
         inputs = Input(shape=(grid_size[0], 1, 1))
 
         # padding for input grid
-        paddings = tf.constant([[0, 0], [2, 2], [0, 0], [0, 0]])
+        paddings = tf.constant([[0, 0], [int((filter_size[0]-1)/2), int((filter_size[0]-1)/2)], [0, 0], [0, 0]])
+
         # execution of reflection padding
         padding_first = Lambda(lambda t: tf.pad(t, paddings, "REFLECT"))(inputs)
 
+        # first convolutional layer with output (grid_size[0], 1, number of filters)
         conv_first = Conv2D(filters=nb_filters,
                             kernel_size=filter_size,
                             activation='relu',
                             padding="valid")(padding_first)
 
+        # execution of reflection padding
         padding_second = Lambda(lambda t: tf.pad(t, paddings, "REFLECT"))(conv_first)
 
+        # second convolutional layer to get same output shape as input
         conv_second = Conv2D(filters=1,
                              kernel_size=filter_size,
                              activation='hard_sigmoid',
                              padding="valid")(padding_second)
 
-        print(inputs)
-        print(padding_first)
-        print(conv_first)
-        print(padding_second)
-        print(conv_second)
-
-        # input_shape. tuple does not include the sample axis
         self.model = Model(inputs=inputs, outputs=conv_second)
 
+        # try of new optimizer
         opt = optimizers.Adadelta()
 
         self.model.compile(loss='mae', optimizer=opt, metrics=['mae'])
@@ -71,6 +70,12 @@ class CNN(NN):
         """
         Prediction with model
 
+        Args:
+            x_test: values to predict the next time step
+
+        Returns:
+            yhat: prediction of next time step
+
         """
         yhat = self.model.predict(x_test)
 
@@ -78,8 +83,13 @@ class CNN(NN):
 
     def fit(self, x_train, y_train, x_val, y_val):
         """
-        Train the model
+        Train the model, fit self.model
 
+        Args:
+            x_train: values to predict the next time step
+            y_train: values of the next time step to train
+            x_val: validation of prediction base
+            y_val: validation of prediction
         """
 
         tb_callback = TensorBoard(log_dir='./logs', histogram_freq=0,
@@ -97,6 +107,14 @@ class CNN(NN):
     def scale(self, array):
         """
         Scale of input data
+
+        Args:
+            array: input 2d array
+
+        Returns:
+            scaler: min max scaler fit on input array
+            transformed_array: input array scaled between 0 and 1
+
         """
         scaler = MinMaxScaler(feature_range=(0, 1))
         scaler = scaler.fit(array)
@@ -105,6 +123,13 @@ class CNN(NN):
     def scale_invert(self, scaler, array):
         """
         Invert application of `scale`
+
+        Args:
+            scaler: min max scaler for input array
+            array: array scaled with scaler
+
+        Returns:
+            array_unscaled: array with original scale
         """
         array = np.reshape(array, (array.shape[0], array.shape[1]))
 
@@ -120,8 +145,9 @@ class CNN(NN):
             array: input data
 
         Returns:
-            train, test, val
-
+            train: part of array for training
+            test: part of array for testing
+            val: part of array for validation
         """
 
         train = array[:int(4/6 * array.shape[0]), :, :, :]
@@ -131,6 +157,14 @@ class CNN(NN):
         return train, test, val
 
     def analysis_scatter(self, ytest, ypred, runtime):
+        """
+        Analyse the prediction of CNN with a scatter plot in `./Images`
+
+        Args:
+            ytest: true values of the next time step
+            ypred: prediction of the next time step
+            runtime: runtime of the model
+        """
         print(ytest.shape)
         print(ypred.shape)
 
