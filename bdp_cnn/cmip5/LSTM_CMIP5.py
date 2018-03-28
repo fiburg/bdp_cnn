@@ -60,7 +60,7 @@ class LSTM_model(NN):
     def getdata(self,file):
         from .datahandler import DataHandler
 
-        _data = DataHandler.read_netcdf(file)
+        _data = DataHandler.get_var(file,var_name="var167")
 
         self.data = DataHandler.shape(_data)
 
@@ -283,10 +283,24 @@ def autorun(neurons,epochs,time_steps,batch_size):
 
 if __name__ == "__main__":
 
-    # for time_steps in [2,5,10,20,50,100]:
-        for neurons in np.arange(50,300,50):
-            for epochs in [1,5,10]:
-                autorun(neurons=neurons,time_steps=10,epochs=epochs,batch_size=50)
+    neurons = 50
+    epochs = 1
+    time_steps = 10
+    batch_size = 5
+
+    start = timeit.default_timer()
+    model = LSTM_model(neurons=neurons, nb_epoch=epochs, time_steps=time_steps, batch_size=batch_size)
+    model.getdata()
+    model.createGenerators()
+    model.init_model()
+    model.fit_model()
+    truth, preds = model.evaluate()
+    truth = model.scale_invert(truth)
+    preds = model.scale_invert(preds)
+    stop = timeit.default_timer()
+    runtime = stop-start
+
+    model.analysis_scatter(truth,preds,runtime)
 
 
 
