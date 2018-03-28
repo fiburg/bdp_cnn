@@ -50,5 +50,5 @@ def creation_main(members,init_time=1000,duration_time=365*10,stepsize=6,cpus=-1
     return model
 
 if __name__ == "__main__":
-    model  = creation_main(1,duration_time=100*365)
-    model.write_netcdf(path="100_years_1_member.nc")
+    model  = creation_main(members=100,duration_time=1000)
+    model.write_netcdf(path="100_times_1000_days.nc")
