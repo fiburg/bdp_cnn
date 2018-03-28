@@ -44,7 +44,6 @@ class DataHandler(object):
 
         todate = np.vectorize(datetime.strptime)
         newtime = todate(time.astype('int').astype('str'), '%Y%m%d')
-        print(newtime)
 
         nc.close()
 
