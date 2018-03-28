@@ -3,6 +3,7 @@ Class to work with the LSTM RNN. The class completely uses the keras API.
 For an example to define a complete model run checkout the function autorun at the bottom of this module.
 """
 
+from bdp_cnn.cmip5.datahandler import DataHandler
 
 from bdp_cnn.Lorenz.NN_Lorenz import NN
 from bdp_cnn.Lorenz.scaling import scale
@@ -54,16 +55,15 @@ class LSTM_model(NN):
         self.batch_size = batch_size
         self.nb_epoch = nb_epoch
         self.neurons = neurons
-        self.data_dim = 40
+        self.data_dim = 18432
         self.time_steps=time_steps
 
-    def getdata(self,file):
-        from .datahandler import DataHandler
+    def getdata(self, file):
+        _data = DataHandler().get_var(file ,var_name="var167")
+        _data = DataHandler().shape(_data)
+        _data = scale().T(_data)
 
-        _data = DataHandler.get_var(file,var_name="var167")
-
-        self.data = DataHandler.shape(_data)
-
+        self.data = _data
 
 
 
@@ -119,8 +119,15 @@ class LSTM_model(NN):
                 - test_gen: Generator for testing data
 
         """
-        f0 = 2/3 * len(self.data.value)+27
-        f1 = 5/6 * len(self.data.value)+5
+        #f0 = 64*12+12+1
+
+        f0 = (4*1.5) * self.batch_size*self.time_steps+self.time_steps+1
+
+        f1 = f0 + (4*0.25) * self.batch_size * self.time_steps + self.time_steps + 1
+
+        print(f0)
+        print(f1)
+        print(len(self.data.value))
 
         self.train_gen = TimeseriesGenerator(
             self.data.value[:int(f0)], self.data.value[:int(f0)],
@@ -147,7 +154,7 @@ class LSTM_model(NN):
 
         """
         self.model.fit_generator(self.train_gen,shuffle=False,epochs=self.nb_epoch,
-                                 validation_data=self.valid_gen,verbose=1)
+                                 validation_data=self.valid_gen, verbose=1)
 
         self.__init_pred_model()
 
@@ -183,7 +190,7 @@ class LSTM_model(NN):
         """
 
         print("Evaluating the model...")
-        py = np.zeros([len(self.test_gen),40])
+        py = np.zeros([len(self.test_gen),self.data_dim])
         for i in range(len(self.test_gen)):
             py[i] = (self.test_gen[i][1][0][:])
 
@@ -230,7 +237,7 @@ class LSTM_model(NN):
         corr = np.corrcoef(ytest.reshape(shape), ypred.reshape(shape))
 
         m, b = np.polyfit(ytest.reshape(shape), ypred.reshape(shape), 1)
-        x = range(-22, 22, 1)
+        x = range(100, 400, 1)
         yreg = np.add(np.multiply(m, x), b)
 
         print("plotting Results...")
@@ -238,7 +245,7 @@ class LSTM_model(NN):
         fig, ax = plt.subplots(figsize=(7, 4))
         fig.suptitle(
             'LSTM with {0} neurons, {1} batchsize, {2} epochs and {3} timesteps\n RMSE = {4:.3f} '\
-            'and CORR = {5:.3f}, runtume = {6:.2f} '.format(
+            'and CORR = {5:.3f}, runtime = {6:.2f} s'.format(
                 self.neurons,
                 self.batch_size,
                 self.nb_epoch,
@@ -251,10 +258,10 @@ class LSTM_model(NN):
         ax.grid()
         ax.set_xlabel("Test")
         ax.set_ylabel("Prediction")
-        ax.set_xlim(-10, 20)
-        ax.set_ylim(-10, 20)
+        ax.set_xlim(150, 350)
+        ax.set_ylim(150, 350)
         print("\t saving figure...")
-        plt.savefig("Images/CNN_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
+        plt.savefig("Images/LSTM_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
                     (self.neurons, self.batch_size, self.nb_epoch, self.time_steps), dpi=400)
 
 
@@ -283,14 +290,14 @@ def autorun(neurons,epochs,time_steps,batch_size):
 
 if __name__ == "__main__":
 
-    neurons = 50
-    epochs = 1
-    time_steps = 10
-    batch_size = 5
+    neurons = 150
+    epochs = 10
+    time_steps = 12
+    batch_size = int(64 / 4)
 
     start = timeit.default_timer()
     model = LSTM_model(neurons=neurons, nb_epoch=epochs, time_steps=time_steps, batch_size=batch_size)
-    model.getdata()
+    model.getdata('./data/lkm0401_echam6_BOT_mm_1850-2005.nc')
     model.createGenerators()
     model.init_model()
     model.fit_model()
