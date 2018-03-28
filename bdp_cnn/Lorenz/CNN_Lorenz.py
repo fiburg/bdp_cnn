@@ -8,6 +8,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error
 import numpy as np
 import matplotlib.pyplot as plt
+import timeit
 
 class CNN(NN):
     """
@@ -24,7 +25,7 @@ class CNN(NN):
 
         self.init_model(nb_filters=self.neurons, filter_size=self.filter, time_steps=time_steps)
 
-    def init_model(self, nb_filters=100, filter_size=(3, 1), grid_size=(40, 1), time_steps=1):
+    def init_model(self, nb_filters=100, filter_size=(5, 1), grid_size=(40, 1), time_steps=1):
         """
         Initialisation of CNN model
 
@@ -129,7 +130,7 @@ class CNN(NN):
 
         return train, test, val
 
-    def analysis_scatter(self, ytest, ypred):
+    def analysis_scatter(self, ytest, ypred, runtime):
         print(ytest.shape)
         print(ypred.shape)
 
@@ -146,12 +147,12 @@ class CNN(NN):
 
         fig, ax = plt.subplots(figsize=(7, 4))
         fig.suptitle(
-            'CNN with {0:d} filter, {1:d} filtersize, {2:d} batchsize,\n {3:d} epochs and {4:d} timesteps: RMSE = {5:5.4f} and CORR = {6:8.6f}'.format(self.neurons,
+            'CNN with {0:d} filter, {1:d} filtersize, {2:d} batchsize, {3:d} epochs and \n {4:d} timestep: RMSE = {5:.3f}, CORR = {6:.3f} and runtime = {7:.2f}'.format(self.neurons,
                                                                                                                   self.filter[0],
                                                                                                                   self.batch,
                                                                                                                   self.epochs,
                                                                                                                   self.time_steps,
-                                                                                                                  rmse, corr[0, 1]))
+                                                                                                                  rmse, corr[0, 1], runtime))
         ax.plot(ytest.reshape(shape), ypred.reshape(shape), lw=0, marker=".", color="blue", alpha=0.05, markeredgewidth=0.0)
         ax.plot(x, yreg, '-', label="Regression", color="red", lw=2)
         ax.legend(loc="upper left")
@@ -166,8 +167,9 @@ class CNN(NN):
 
 
 if __name__ == "__main__":
-    for neurons in [150, 200, 250]:
+    for neurons in [50, 100, 150, 200, 250]:
         for epochs in [10]:
+            start = timeit.default_timer()
             cnn = CNN(neurons=neurons, epochs=epochs)
 
             # data handling
@@ -196,8 +198,11 @@ if __name__ == "__main__":
             ypred = cnn.scale_invert(yscaler, ypred)
             ytest = cnn.scale_invert(yscaler, ytest)
 
+            stop = timeit.default_timer()
+            runtime = stop - start
+
             # performance analysis
-            cnn.analysis_scatter(ytest, ypred)
+            cnn.analysis_scatter(ytest, ypred, runtime)
 
             cnn.model.summary()
             cnn = None
