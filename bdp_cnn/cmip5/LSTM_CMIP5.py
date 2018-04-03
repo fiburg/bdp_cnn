@@ -18,6 +18,10 @@ import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde
 from sklearn.metrics import mean_squared_error
 import timeit
+import os
+from datetime import datetime as dt
+from netCDF4 import Dataset
+import time
 
 
 class LSTM_model(NN):
@@ -208,6 +212,26 @@ class LSTM_model(NN):
     def scale(self,var="T"):
         pass
 
+    def save_model(self,folder=None): #TODO: move this to datahandler
+        """
+        Saves the model as json file with the trained weights in same folder.
+
+        Args:
+            folder: name of folder where model will be saved. (Default:./Date)
+
+        """
+        json_model = self.model.to_json()
+
+        now = dt.now().strftime("%Y%m%d_%H%M_%Ss/")
+        if not folder:
+            folder = now
+
+        os.mkdir(now)
+        with open(folder+"model.json","w") as f:
+            f.write(json_model)
+        self.model.save_weights(folder+"weights.h5")
+
+
 
 
     def scale_invert(self,value):
@@ -263,6 +287,48 @@ class LSTM_model(NN):
         print("\t saving figure...")
         plt.savefig("Images/LSTM_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
                     (self.neurons, self.batch_size, self.nb_epoch, self.time_steps), dpi=400)
+
+
+    def save_results(self,trues,preds,rmse,corr,runtime,file=None): #TODO: move this to datahandler
+        """
+        saves the results to netcdf.
+
+        """
+
+        if not file:
+            now = dt.now().strftime("%Y%m%d_%H%M_%Ss/")
+            file = "RMSE%f.2_%s"(rmse,now)
+
+        nc = Dataset(file,mode="w")
+
+        nc.creation_date = time.asctime()
+        nc.RMSE = str(round(rmse,2))
+        nc.CORR = str(round(corr,2))
+        nc.Runtime = str(round(runtime,2))
+
+        nc.createDimension("time",trues.shape[0])
+        nc.createDimension("lat",trues.shape[1])
+        nc.createDimension("lon",trues.shape[2])
+
+        # time_var = nc.createVariable("time","f8",("time"))
+        true_var = nc.createVariable("true_values","f8",("time","lat","lon"))
+        true_var.description = "Values from the CMIP5 dataset which where used as testing data."
+
+        pred_var = nc.createVariable("predictions","f8",("time","lat","lon"))
+        pred_var.description = "From LSTM predicted values."
+
+        true_var[:,:,:] = trues
+        pred_var[:,:,:] = preds
+
+        nc.close()
+
+
+
+
+
+
+
+
 
 
 
