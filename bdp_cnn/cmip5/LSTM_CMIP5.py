@@ -60,7 +60,7 @@ class LSTM_model(NN):
     def getdata(self,file):
         from .datahandler import DataHandler
 
-        _data = DataHandler.get_var(file,var_name="var167")
+        _data = DataHandler.get_vamr(file,var_name="var167")
 
         self.data = DataHandler.shape(_data)
 
