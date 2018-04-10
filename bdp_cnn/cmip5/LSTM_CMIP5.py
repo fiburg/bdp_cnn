@@ -225,8 +225,10 @@ class LSTM_model(NN):
         now = dt.now().strftime("%Y%m%d_%H%M_%Ss/")
         if not folder:
             folder = now
+        else:
+            folder += now
 
-        os.mkdir(now)
+        os.mkdir(folder)
         with open(folder+"model.json","w") as f:
             f.write(json_model)
         self.model.save_weights(folder+"weights.h5")
@@ -289,15 +291,18 @@ class LSTM_model(NN):
                     (self.neurons, self.batch_size, self.nb_epoch, self.time_steps), dpi=400)
 
 
-    def save_results(self,trues,preds,rmse,corr,runtime,file=None): #TODO: move this to datahandler
+    def save_results(self,trues,preds,rmse,corr,runtime,file=None,folder=""): #TODO: move this to datahandler
         """
         saves the results to netcdf.
 
         """
 
         if not file:
-            now = dt.now().strftime("%Y%m%d_%H%M_%Ss/")
-            file = "RMSE%f.2_%s"(rmse,now)
+            now = dt.now().strftime("%Y%m%d_%H%M_%Ss")
+            file = "RMSE%.2f_%s.nc"%(rmse,now)
+
+        file = folder + file
+
 
         nc = Dataset(file,mode="w")
 
@@ -324,15 +329,6 @@ class LSTM_model(NN):
 
 
 
-
-
-
-
-
-
-
-
-
 def autorun(neurons,epochs,time_steps,batch_size):
     """
     Example function for a complete model run, saving the results as an image.
@@ -356,8 +352,8 @@ def autorun(neurons,epochs,time_steps,batch_size):
 
 if __name__ == "__main__":
 
-    neurons = 150
-    epochs = 10
+    neurons = 50
+    epochs = 1
     time_steps = 12
     batch_size = int(64 / 4)
 
@@ -373,7 +369,15 @@ if __name__ == "__main__":
     stop = timeit.default_timer()
     runtime = stop-start
 
-    model.analysis_scatter(truth,preds,runtime)
+    shape = preds.shape[0] * preds.shape[1]
+    rmse = np.sqrt(mean_squared_error(truth.reshape(shape), preds.reshape(shape)))
+    corr = np.corrcoef(truth.reshape(shape), preds.reshape(shape))[1,1]
+
+    truth = DataHandler().shape(truth,inverse=True)
+    preds = DataHandler().shape(preds,inverse=True)
+    model.save_model()
+    model.save_results(truth,preds,rmse,corr,runtime)
+    # model.analysis_scatter(truth,preds,runtime)
 
 
 
