@@ -254,10 +254,13 @@ if __name__ == "__main__":
     stop = timeit.default_timer()
     runtime = stop-start
 
-    eval = Evaluater()
     #eval.scatter(truth, preds, neurons, batch_size, epochs, time_steps, runtime)
-    eval.hist2d(truth, preds, neurons, batch_size, epochs, time_steps, runtime)
+    #Evaluater().hist2d(truth, preds, neurons, batch_size, epochs, time_steps, runtime)
 
+    truth = DataHandler().shape(truth, inverse=True)
+    preds = DataHandler().shape(preds, inverse=True)
+
+    Evaluater().map_std(truth, preds, neurons, batch_size, epochs, time_steps, runtime)
 
 
 

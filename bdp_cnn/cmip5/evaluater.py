@@ -117,3 +117,54 @@ class Evaluater(object):
 
         plt.savefig("Images/LSTM_hist2d_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
                     (neurons, batch_size, epochs, time_steps), dpi=400)
+
+    def map_std(self, ytest, ypred, neurons, batch_size, epochs, time_steps, runtime, path="./"):
+        """
+
+        Args:
+            ytest:
+            ypred:
+            neurons:
+            batch_size:
+            epochs:
+            time_steps:
+            runtime:
+            path:
+
+        Returns:
+
+        """
+        diff = ypred - ytest
+
+        """
+        some ideas...
+        
+        diff = ypred-ytest
+
+        std = np.std(diff, axis=0)
+
+        xlist = np.linspace(10, 100, 10)
+        ylist = np.linspace(100, 200, 10)
+        X, Y = np.meshgrid(xlist, ylist)
+        Z = (200000 + 14000 * X) / (Y * X * 5 - 588 * X)
+
+        print(Z)
+        plt.rcParams.update({'font.size': 22})
+        plt.figure()
+
+        cmap = cm.Blues
+        # norm = cm.colors.Normalize(vmax, vmin)
+        levels = np.linspace(0, 1000, 11, endpoint=True)
+
+        cp = plt.contourf(X, Y, Z, cmap=cmap, levels=levels, extend="max")
+        plt.colorbar(cp)
+        plt.title('Nutzen')
+        plt.xlabel('Bildschirme (Stk.)')
+        plt.ylabel('Preis (Euro)')
+
+        f = plt.gcf()
+        f.set_size_inches(16.53, 11.69)
+
+        plt.tight_layout()
+        plt.savefig('./XBildschirme_YPreis_ZNutzen.pdf')
+        """
