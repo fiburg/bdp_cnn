@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error
 from matplotlib.colors import LogNorm
 from matplotlib import cm
-
+from mpl_toolkits.basemap import Basemap
 
 class Evaluater(object):
     """
@@ -103,7 +103,8 @@ class Evaluater(object):
         plt.hist2d(ytest.reshape(shape), ypred.reshape(shape), bins=50, cmap='Greys', norm=LogNorm())
         plt.plot(x, yreg, '--', label="Regression", color='k', lw=1)
 
-        plt.colorbar()
+        cb = plt.colorbar()
+        cb.set_label('number (1)')
 
         ax.legend(loc="upper left")
         ax.grid()
@@ -117,8 +118,9 @@ class Evaluater(object):
         plt.savefig("Images/LSTM_hist2d_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
                     (neurons, batch_size, epochs, time_steps), dpi=400)
 
-    def map_mae(self, ytest, ypred, neurons, batch_size, epochs, time_steps, path="./"):
+    def map_mae(self, ytest, ypred, neurons, batch_size, epochs, time_steps, runtime, path="./"):
         """
+        Plots the mean absolute error between the truth and prediction on the map.
 
         Args:
             ytest:
@@ -137,14 +139,15 @@ class Evaluater(object):
 
         mae = np.mean(diff, axis=0)
 
-        lat = np.linspace(0, 192, 192)
-        lon = np.linspace(0, 96, 96)
+        lat = np.linspace(-90, 90, 192)
+        lon = np.linspace(-180, 180, 96)
         X, Y = np.meshgrid(lon, lat)
 
-        print(lat)
-        print(lon)
+        ytest = np.reshape(ytest, (ytest.shape[0] * ytest.shape[1] * ytest.shape[2]))
+        ypred = np.reshape(ypred, (ypred.shape[0] * ypred.shape[1] * ypred.shape[2]))
 
-        #plt.rcParams.update({'font.size': 22})
+        rmse = np.sqrt(mean_squared_error(ytest, ypred))
+        corr = np.corrcoef(ytest, ypred)
 
         # plotting
         print("plotting results as mae map plot...")
@@ -152,23 +155,28 @@ class Evaluater(object):
         fig, ax = plt.subplots(figsize=(7, 4))
 
         fig.suptitle(
-            'LSTM with {0} neurons, {1} batchsize, {2} epochs and {3} timesteps'.format(
+            'LSTM with {0} neurons, {1} batchsize, {2} epochs and {3} timesteps\n RMSE = {4:.3f} ' \
+            'and CORR = {5:.3f}, runtime = {6:.2f} s'.format(
                 neurons,
                 batch_size,
                 epochs,
-                time_steps))
+                time_steps,
+                rmse, corr[0, 1], runtime))
 
-        #norm = cm.colors.Normalize(-5, 5)
-        levels = np.linspace(-5.5, 5.5, 12, endpoint=True)
+        earth = Basemap()
+        earth.drawcoastlines()
 
-        cp = plt.contourf(X, Y, mae, cmap=cm.seismic, levels=levels, extend="both")
-        plt.colorbar(cp)
+        levels = np.linspace(-8.5, 8.5, 18, endpoint=True)
+        ticks = np.linspace(-8, 8, 9, endpoint=True)
 
-        #ax.grid()
-        ax.set_xlabel("lat")
-        ax.set_ylabel("lon")
-        #ax.set_xlim(self.ymin, self.ymax)
-        #ax.set_ylim(self.ymin, self.ymax)
+        cp = plt.contourf(X, Y, mae, cmap=cm.seismic, levels=levels, extend="both", alpha=0.9)
+        cb = plt.colorbar(cp, ticks=ticks)
+        cb.set_label(r'CMIP5 Temperature - Pred. Temperature ($\Delta{}$K)')
+
+        #ax.set_xlabel("lat")
+        #ax.set_ylabel("lon")
+
+        plt.tight_layout()
 
         print("\t saving figure...")
 

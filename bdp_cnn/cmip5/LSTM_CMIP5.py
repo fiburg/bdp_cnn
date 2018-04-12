@@ -122,9 +122,9 @@ class LSTM_model(NN):
         """
         #f0 = 64*12+12+1
 
-        f0 = (4*1.5) * self.batch_size*self.time_steps+self.time_steps+1
+        f0 = (2*1.5) * self.batch_size*self.time_steps+self.time_steps+1
 
-        f1 = f0 + (4*0.25) * self.batch_size * self.time_steps + self.time_steps + 1
+        f1 = f0 + (2*0.25) * self.batch_size * self.time_steps + self.time_steps + 1
 
         print(f0)
         print(f1)
@@ -237,10 +237,10 @@ def autorun(neurons,epochs,time_steps,batch_size):
 
 if __name__ == "__main__":
 
-    neurons = 50
-    epochs = 1
+    neurons = 150
+    epochs = 15
     time_steps = 12
-    batch_size = int(64 / 4)
+    batch_size = int(64 / 2)
 
     start = timeit.default_timer()
     model = LSTM_model(neurons=neurons, nb_epoch=epochs, time_steps=time_steps, batch_size=batch_size)
@@ -254,13 +254,13 @@ if __name__ == "__main__":
     stop = timeit.default_timer()
     runtime = stop-start
 
-    #eval.scatter(truth, preds, neurons, batch_size, epochs, time_steps, runtime)
-    #Evaluater().hist2d(truth, preds, neurons, batch_size, epochs, time_steps, runtime)
+    #Evaluater().scatter(truth, preds, neurons, batch_size, epochs, time_steps, runtime)
+    Evaluater().hist2d(truth, preds, neurons, batch_size, epochs, time_steps, runtime)
 
     truth = DataHandler().shape(truth, inverse=True)
     preds = DataHandler().shape(preds, inverse=True)
 
-    Evaluater().map_mae(truth, preds, neurons, batch_size, epochs, time_steps)
+    Evaluater().map_mae(truth, preds, neurons, batch_size, epochs, time_steps, runtime)
 
 
 
