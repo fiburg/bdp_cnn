@@ -1,10 +1,9 @@
 from netCDF4 import Dataset
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.mlab import griddata
-from datetime import datetime
 from sklearn.metrics import mean_squared_error
-from matplotlib.colors import LogNorm, PowerNorm
+from matplotlib.colors import LogNorm
+from matplotlib import cm
 
 
 class Evaluater(object):
@@ -118,7 +117,7 @@ class Evaluater(object):
         plt.savefig("Images/LSTM_hist2d_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
                     (neurons, batch_size, epochs, time_steps), dpi=400)
 
-    def map_std(self, ytest, ypred, neurons, batch_size, epochs, time_steps, runtime, path="./"):
+    def map_mae(self, ytest, ypred, neurons, batch_size, epochs, time_steps, path="./"):
         """
 
         Args:
@@ -134,37 +133,44 @@ class Evaluater(object):
         Returns:
 
         """
-        diff = ypred - ytest
+        diff = ytest - ypred
 
-        """
-        some ideas...
-        
-        diff = ypred-ytest
+        mae = np.mean(diff, axis=0)
 
-        std = np.std(diff, axis=0)
+        lat = np.linspace(0, 192, 192)
+        lon = np.linspace(0, 96, 96)
+        X, Y = np.meshgrid(lon, lat)
 
-        xlist = np.linspace(10, 100, 10)
-        ylist = np.linspace(100, 200, 10)
-        X, Y = np.meshgrid(xlist, ylist)
-        Z = (200000 + 14000 * X) / (Y * X * 5 - 588 * X)
+        print(lat)
+        print(lon)
 
-        print(Z)
-        plt.rcParams.update({'font.size': 22})
-        plt.figure()
+        #plt.rcParams.update({'font.size': 22})
 
-        cmap = cm.Blues
-        # norm = cm.colors.Normalize(vmax, vmin)
-        levels = np.linspace(0, 1000, 11, endpoint=True)
+        # plotting
+        print("plotting results as mae map plot...")
 
-        cp = plt.contourf(X, Y, Z, cmap=cmap, levels=levels, extend="max")
+        fig, ax = plt.subplots(figsize=(7, 4))
+
+        fig.suptitle(
+            'LSTM with {0} neurons, {1} batchsize, {2} epochs and {3} timesteps'.format(
+                neurons,
+                batch_size,
+                epochs,
+                time_steps))
+
+        #norm = cm.colors.Normalize(-5, 5)
+        levels = np.linspace(-5.5, 5.5, 12, endpoint=True)
+
+        cp = plt.contourf(X, Y, mae, cmap=cm.seismic, levels=levels, extend="both")
         plt.colorbar(cp)
-        plt.title('Nutzen')
-        plt.xlabel('Bildschirme (Stk.)')
-        plt.ylabel('Preis (Euro)')
 
-        f = plt.gcf()
-        f.set_size_inches(16.53, 11.69)
+        #ax.grid()
+        ax.set_xlabel("lat")
+        ax.set_ylabel("lon")
+        #ax.set_xlim(self.ymin, self.ymax)
+        #ax.set_ylim(self.ymin, self.ymax)
 
-        plt.tight_layout()
-        plt.savefig('./XBildschirme_YPreis_ZNutzen.pdf')
-        """
+        print("\t saving figure...")
+
+        plt.savefig("Images/LSTM_maemap_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
+                    (neurons, batch_size, epochs, time_steps), dpi=400)

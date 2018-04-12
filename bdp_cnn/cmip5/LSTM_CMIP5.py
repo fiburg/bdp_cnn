@@ -260,7 +260,7 @@ if __name__ == "__main__":
     truth = DataHandler().shape(truth, inverse=True)
     preds = DataHandler().shape(preds, inverse=True)
 
-    Evaluater().map_std(truth, preds, neurons, batch_size, epochs, time_steps, runtime)
+    Evaluater().map_mae(truth, preds, neurons, batch_size, epochs, time_steps)
 
 
 
