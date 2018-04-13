@@ -19,7 +19,11 @@ import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde
 from sklearn.metrics import mean_squared_error
 import timeit
-
+import os
+from datetime import datetime as dt
+from netCDF4 import Dataset
+import time
+import glob
 
 class LSTM_model(NN):
     """
@@ -122,9 +126,9 @@ class LSTM_model(NN):
         """
         #f0 = 64*12+12+1
 
-        f0 = (2*1.5) * self.batch_size*self.time_steps+self.time_steps+1
+        f0 = (4*1.5) * self.batch_size*self.time_steps+self.time_steps+1
 
-        f1 = f0 + (2*0.25) * self.batch_size * self.time_steps + self.time_steps + 1
+        f1 = f0 + (4*0.25) * self.batch_size * self.time_steps + self.time_steps + 1
 
         print(f0)
         print(f1)
@@ -157,9 +161,8 @@ class LSTM_model(NN):
         self.model.fit_generator(self.train_gen,shuffle=False,epochs=self.nb_epoch,
                                  validation_data=self.valid_gen, verbose=1)
 
-        self.__init_pred_model()
 
-    def __init_pred_model(self):
+    def init_pred_model(self):
         """
         This function will init a new model for the prediction with the already trained weights.
         The new model is exactly the same as the old one, with only the batch-size differing.
@@ -209,10 +212,122 @@ class LSTM_model(NN):
     def scale(self,var="T"):
         pass
 
+    def save_model(self,folder=None): #TODO: move this to datahandler
+        """
+        Saves the model as json file with the trained weights in same folder.
+
+        Args:
+            folder: name of folder where model will be saved. (Default:./Date)
+
+        """
+        json_model = self.model.to_json()
+
+        now = dt.now().strftime("%Y%m%d_%H%M_%Ss/")
+        if not folder:
+            folder = now
+        else:
+            folder += now
+
+        os.mkdir(folder)
+        with open(folder+"model.json","w") as f:
+            f.write(json_model)
+        self.model.save_weights(folder+"weights.h5")
+
+
+
+
     def scale_invert(self,value):
         ret = self.data.scaler.inverse_transform(value)
 
         return ret
+
+    def analysis_scatter(self, ytest, ypred,runtime):
+        """
+        Creates a scatterplot plotting the truth vs. the prediction.
+        Furthermore plots a regression line and writes some stats in the tilte.
+
+        Args:
+            truth: numpy array
+            preds: numpy array
+
+        Returns:
+
+        """
+
+        print(ytest.shape)
+        print(ypred.shape)
+
+        shape = ypred.shape[0] * ypred.shape[1]
+
+        rmse = np.sqrt(mean_squared_error(ytest.reshape(shape), ypred.reshape(shape)))
+        corr = np.corrcoef(ytest.reshape(shape), ypred.reshape(shape))
+
+        m, b = np.polyfit(ytest.reshape(shape), ypred.reshape(shape), 1)
+        x = range(100, 400, 1)
+        yreg = np.add(np.multiply(m, x), b)
+
+        print("plotting Results...")
+
+        fig, ax = plt.subplots(figsize=(7, 4))
+        fig.suptitle(
+            'LSTM with {0} neurons, {1} batchsize, {2} epochs and {3} timesteps\n RMSE = {4:.3f} '\
+            'and CORR = {5:.3f}, runtime = {6:.2f} s'.format(
+                self.neurons,
+                self.batch_size,
+                self.nb_epoch,
+                self.time_steps,
+                rmse, corr[0, 1],runtime))
+        ax.plot(ytest.reshape(shape), ypred.reshape(shape), lw=0, marker=".", color="blue", alpha=0.05,
+                markeredgewidth=0.0)
+        ax.plot(x, yreg, '-', label="Regression", color="red", lw=2)
+        ax.legend(loc="upper left")
+        ax.grid()
+        ax.set_xlabel("Test")
+        ax.set_ylabel("Prediction")
+        ax.set_xlim(150, 350)
+        ax.set_ylim(150, 350)
+        print("\t saving figure...")
+        plt.savefig("Images/LSTM_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
+                    (self.neurons, self.batch_size, self.nb_epoch, self.time_steps), dpi=400)
+
+
+    def save_results(self,trues,preds,rmse,corr,runtime,file=None,folder=""): #TODO: move this to datahandler
+        """
+        saves the results to netcdf.
+
+        """
+
+        if not file:
+            now = dt.now().strftime("%Y%m%d_%H%M_%Ss")
+            file = "RMSE%.2f_%s.nc"%(rmse,now)
+
+        file = folder + file
+
+
+        nc = Dataset(file,mode="w")
+
+        nc.creation_date = time.asctime()
+        nc.RMSE = str(round(rmse,2))
+        nc.CORR = str(round(corr,2))
+        nc.Runtime = str(round(runtime,2))
+
+        nc.createDimension("time",trues.shape[0])
+        nc.createDimension("lat",trues.shape[1])
+        nc.createDimension("lon",trues.shape[2])
+
+        # time_var = nc.createVariable("time","f8",("time"))
+        true_var = nc.createVariable("true_values","f8",("time","lat","lon"))
+        true_var.description = "Values from the CMIP5 dataset which where used as testing data."
+
+        pred_var = nc.createVariable("predictions","f8",("time","lat","lon"))
+        pred_var.description = "From LSTM predicted values."
+
+        true_var[:,:,:] = trues
+        pred_var[:,:,:] = preds
+
+        nc.close()
+
+
 
 def autorun(neurons,epochs,time_steps,batch_size):
     """
@@ -237,23 +352,39 @@ def autorun(neurons,epochs,time_steps,batch_size):
 
 if __name__ == "__main__":
 
-    neurons = 150
-    epochs = 15
+    neurons = 50
+    epochs = 1
     time_steps = 12
-    batch_size = int(64 / 2)
+    batch_size = int(64 / 4)
+
+    datafolder = glob.glob("data/*")
 
     start = timeit.default_timer()
     model = LSTM_model(neurons=neurons, nb_epoch=epochs, time_steps=time_steps, batch_size=batch_size)
-    model.getdata('./data/lkm0401_echam6_BOT_mm_1850-2005.nc')
-    model.createGenerators()
     model.init_model()
-    model.fit_model()
+
+    for file in datafolder:
+        model.getdata(file)
+        model.createGenerators()
+        model.fit_model()
+
+
+    model.init_pred_model()
     truth, preds = model.evaluate()
     truth = model.scale_invert(truth)
     preds = model.scale_invert(preds)
     stop = timeit.default_timer()
     runtime = stop-start
 
+    shape = preds.shape[0] * preds.shape[1]
+    rmse = np.sqrt(mean_squared_error(truth.reshape(shape), preds.reshape(shape)))
+    corr = np.corrcoef(truth.reshape(shape), preds.reshape(shape))[1,1]
+
+    truth = DataHandler().shape(truth,inverse=True)
+    preds = DataHandler().shape(preds,inverse=True)
+    model.save_model()
+    model.save_results(truth,preds,rmse,corr,runtime)
+    # model.analysis_scatter(truth,preds,runtime)
     #Evaluater().scatter(truth, preds, neurons, batch_size, epochs, time_steps, runtime)
     Evaluater().hist2d(truth, preds, neurons, batch_size, epochs, time_steps, runtime)
 
