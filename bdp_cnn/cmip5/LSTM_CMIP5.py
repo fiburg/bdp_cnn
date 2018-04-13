@@ -22,7 +22,7 @@ import os
 from datetime import datetime as dt
 from netCDF4 import Dataset
 import time
-
+import glob
 
 class LSTM_model(NN):
     """
@@ -160,9 +160,8 @@ class LSTM_model(NN):
         self.model.fit_generator(self.train_gen,shuffle=False,epochs=self.nb_epoch,
                                  validation_data=self.valid_gen, verbose=1)
 
-        self.__init_pred_model()
 
-    def __init_pred_model(self):
+    def init_pred_model(self):
         """
         This function will init a new model for the prediction with the already trained weights.
         The new model is exactly the same as the old one, with only the batch-size differing.
@@ -357,12 +356,19 @@ if __name__ == "__main__":
     time_steps = 12
     batch_size = int(64 / 4)
 
+    datafolder = glob.glob("data")
+
     start = timeit.default_timer()
     model = LSTM_model(neurons=neurons, nb_epoch=epochs, time_steps=time_steps, batch_size=batch_size)
-    model.getdata('./data/lkm0401_echam6_BOT_mm_1850-2005.nc')
-    model.createGenerators()
     model.init_model()
-    model.fit_model()
+
+    for file in datafolder:
+        model.getdata(file)
+        model.createGenerators()
+        model.fit_model()
+
+
+    model.init_pred_model()
     truth, preds = model.evaluate()
     truth = model.scale_invert(truth)
     preds = model.scale_invert(preds)
