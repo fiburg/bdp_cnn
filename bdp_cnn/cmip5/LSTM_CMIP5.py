@@ -356,7 +356,7 @@ if __name__ == "__main__":
     time_steps = 12
     batch_size = int(64 / 4)
 
-    datafolder = glob.glob("data")
+    datafolder = glob.glob("data/*")
 
     start = timeit.default_timer()
     model = LSTM_model(neurons=neurons, nb_epoch=epochs, time_steps=time_steps, batch_size=batch_size)
