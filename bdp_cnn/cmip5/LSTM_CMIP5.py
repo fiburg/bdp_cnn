@@ -3,6 +3,8 @@ Class to work with the LSTM RNN. The class completely uses the keras API.
 For an example to define a complete model run checkout the function autorun at the bottom of this module.
 """
 
+import matplotlib
+matplotlib.use("Agg")
 from bdp_cnn.cmip5.datahandler import DataHandler
 
 from bdp_cnn.Lorenz.NN_Lorenz import NN
@@ -352,13 +354,13 @@ def autorun(neurons,epochs,time_steps,batch_size):
 
 if __name__ == "__main__":
 
-    neurons = 50
-    epochs = 1
+    neurons = 200
+    epochs = 100
     time_steps = 12
     batch_size = int(64 / 4)
 
-    datafolder = glob.glob("data/*")
-
+    datafolder = glob.glob("/home/mpim/m300517/Hausaufgaben/bdp_cnn/bdp_cnn/cmip5/data/*")
+    print(datafolder)
     start = timeit.default_timer()
     model = LSTM_model(neurons=neurons, nb_epoch=epochs, time_steps=time_steps, batch_size=batch_size)
     model.init_model()
