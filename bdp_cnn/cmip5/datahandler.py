@@ -1,6 +1,7 @@
 from netCDF4 import Dataset
 import numpy as np
-from datetime import datetime
+from datetime import datetime as dt
+import time
 
 class DataHandler(object):
     """
@@ -71,6 +72,49 @@ class DataHandler(object):
 
         else:
             return np.reshape(array,(array.shape[0],lat,lon))
+
+    def save_results(self,trues,preds,rmse,corr,runtime,file=None,folder=""):
+        """
+        saves the lstm results to netcdf.
+
+        Args:
+            trues: numpy array: true values
+            preds: numpy array: predicted values
+            rmse: float: root mean squared error
+            corr: float: correlation
+            runtime: float: lstm runtime
+            file: str: path of output file
+            folder: str: path of output folder
+        """
+
+        if not file:
+            now = dt.now().strftime("%Y%m%d_%H%M_%Ss")
+            file = "RMSE%.2f_%s.nc"%(rmse,now)
+
+        file = folder + file
+
+        nc = Dataset(file, mode="w")
+
+        nc.creation_date = time.asctime()
+        nc.RMSE = str(round(rmse,2))
+        nc.CORR = str(round(corr,2))
+        nc.Runtime = str(round(runtime,2))
+
+        nc.createDimension("time",trues.shape[0])
+        nc.createDimension("lat",trues.shape[1])
+        nc.createDimension("lon",trues.shape[2])
+
+        # time_var = nc.createVariable("time","f8",("time"))
+        true_var = nc.createVariable("true_values","f8",("time","lat","lon"))
+        true_var.description = "Values from the CMIP5 dataset which where used as testing data."
+
+        pred_var = nc.createVariable("predictions","f8",("time","lat","lon"))
+        pred_var.description = "From LSTM predicted values."
+
+        true_var[:,:,:] = trues
+        pred_var[:,:,:] = preds
+
+        nc.close()
 
 
 if __name__ == "__main__":
