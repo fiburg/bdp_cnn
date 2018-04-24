@@ -10,19 +10,12 @@ from bdp_cnn.Lorenz.scaling import scale
 from bdp_cnn.cmip5.evaluater import Evaluater
 import numpy as np
 
-
 from keras.models import Sequential
 from keras.layers import Dense,LSTM
 from keras.preprocessing.sequence import TimeseriesGenerator
 
-import matplotlib.pyplot as plt
-from scipy.stats import gaussian_kde
 from sklearn.metrics import mean_squared_error
 import timeit
-import os
-from datetime import datetime as dt
-from netCDF4 import Dataset
-import time
 import glob
 
 class LSTM_model(NN):
@@ -64,13 +57,17 @@ class LSTM_model(NN):
         self.time_steps=time_steps
 
     def getdata(self, file):
+        """
+        loads and scales data with ``DataHandler`` and ``scale``
+
+        Args:
+            file: str: file name
+        """
         _data = DataHandler().get_var(file ,var_name="var167")
         _data = DataHandler().shape(_data)
         _data = scale().T(_data)
 
         self.data = _data
-
-
 
     def init_model(self,batch_size=None,nb_epoch=None,neurons=None):
         """
@@ -177,7 +174,7 @@ class LSTM_model(NN):
                             batch_size=1,
                             # return_sequences=True,
                             stateful=False,
-                            input_shape=(self.time_steps,self.data_dim))),
+                            input_shape=(self.time_steps, self.data_dim))),
         self.model.add(Dense(self.data_dim))
         self.model.set_weights(weights)
         self.model.compile(loss='mean_squared_error', optimizer='adam')
@@ -194,7 +191,7 @@ class LSTM_model(NN):
         """
 
         print("Evaluating the model...")
-        py = np.zeros([len(self.test_gen),self.data_dim])
+        py = np.zeros([len(self.test_gen), self.data_dim])
         for i in range(len(self.test_gen)):
             py[i] = (self.test_gen[i][1][0][:])
 
@@ -202,36 +199,13 @@ class LSTM_model(NN):
         # print("Truth: %.5f   | Prediction: %.5f "%(test_y*scaler,p[0]*scaler))
         # pred_model.evaluate_generator(test_gen)
 
-
         return py,preds
 
     def predict(self,value):
         self.model.predict(value)
 
-
     def scale(self,var="T"):
         pass
-
-    def save_model(self,folder=None): #TODO: move this to datahandler
-        """
-        Saves the model as json file with the trained weights in same folder.
-
-        Args:
-            folder: name of folder where model will be saved. (Default:./Date)
-
-        """
-        json_model = self.model.to_json()
-
-        now = dt.now().strftime("%Y%m%d_%H%M_%Ss/")
-        if not folder:
-            folder = now
-        else:
-            folder += now
-
-        os.mkdir(folder)
-        with open(folder+"model.json","w") as f:
-            f.write(json_model)
-        self.model.save_weights(folder+"weights.h5")
 
     def scale_invert(self,value):
         ret = self.data.scaler.inverse_transform(value)
@@ -260,7 +234,6 @@ if __name__ == "__main__":
         model.createGenerators()
         model.fit_model()
 
-
     model.init_pred_model()
     truth, preds = model.evaluate()
     truth = model.scale_invert(truth)
@@ -271,20 +244,13 @@ if __name__ == "__main__":
     shape = preds.shape[0] * preds.shape[1]
     rmse = np.sqrt(mean_squared_error(truth.reshape(shape), preds.reshape(shape)))
     corr = np.corrcoef(truth.reshape(shape), preds.reshape(shape))[0,1]
-    print(corr)
-    print(rmse)
     truth = dh.shape(truth,inverse=True)
     preds = dh.shape(preds,inverse=True)
 
     # save the model with results
-    model.save_model()
-    dh.save_results(truth,preds,rmse,corr,runtime)
+    dh.save_model(model.model)
+    dh.save_results(truth, preds, rmse, corr, runtime)
 
     # evaluate the model and plot the results
     ev.hist2d(truth, preds, neurons, batch_size, epochs, time_steps, runtime, rmse, corr)
     ev.map_mae(truth, preds, neurons, batch_size, epochs, time_steps, runtime, rmse, corr)
-
-
-
-
-
