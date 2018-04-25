@@ -274,8 +274,11 @@ if __name__ == "__main__":
     time_steps = 12
     batch_size = int(64 / 4)
 
-    #datafolder = glob.glob("/home/mpim/m300517/Hausaufgaben/bdp_cnn/bdp_cnn/cmip5/data/*")
-    datafolder = glob.glob("./data/*")
+    # change working/data directory
+    wdir = './'
+    #wdir = "/home/mpim/m300517/Hausaufgaben/bdp_cnn/bdp_cnn/cmip5/"
+
+    datafolder = glob.glob(wdir + "data/*")
     print(datafolder)
     start = timeit.default_timer()
     model = LSTM_model(neurons=neurons, nb_epoch=epochs, time_steps=time_steps, batch_size=batch_size)
@@ -298,10 +301,10 @@ if __name__ == "__main__":
 
     # OUTPUT
     folder = dt.now().strftime("%Y%m%d_%H%M_%Ss/")
-    path = './runs/' + folder
+    path = wdir + 'runs/' + folder
 
-    if not os.path.exists('./runs/'):
-        os.mkdir('./runs/')
+    if not os.path.exists(wdir + 'runs/'):
+        os.mkdir(wdir + 'runs/')
 
     # save the model with results
     dh.save_model(model.model, path=path)
