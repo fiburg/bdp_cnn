@@ -156,7 +156,7 @@ class Evaluater(object):
             runtime: float: runtime of model run in seconds
             path: str: path for output
         """
-        diff = ytest - ypred
+        diff = ypred - ytest
 
         mae = np.mean(diff, axis=0)
 
@@ -192,11 +192,37 @@ class Evaluater(object):
 
         cp = plt.contourf(X, Y, mae, cmap=cm.seismic, levels=levels, extend="both", alpha=0.9)
         cb = plt.colorbar(cp, ticks=ticks)
-        cb.set_label(r'CMIP5 Temperature - Pred. Temperature ($\Delta{}$K)')
+        cb.set_label(r'LSTM Temperature - CMIP5 Temperature ($\Delta{}$K)')
 
         plt.tight_layout()
 
         print("\t saving figure...")
 
         plt.savefig(path+"LSTM_maemap_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
+                    (neurons, batch_size, epochs, time_steps), dpi=400)
+
+    def model_history(self, loss, val_loss, neurons, batch_size, epochs, time_steps, runtime, path="./"):
+        print(True)
+        fig, ax = plt.subplots(figsize=(7, 4))
+
+        fig.suptitle(
+            'LSTM with {0} neurons, {1} batchsize, {2} epochs and {3} timesteps\n ' \
+            'and runtime = {4:.2f} s'.format(
+                neurons,
+                batch_size,
+                epochs,
+                time_steps,
+                runtime))
+
+        xep = np.arange(epochs)+1
+
+        ax.plot(xep, loss, label='loss')
+        ax.plot(xep, val_loss, label='val_loss')
+
+        ax.set_xlabel('epochs')
+        ax.set_ylabel('loss')
+        ax.legend()
+        ax.grid()
+
+        plt.savefig(path + "LSTM_history_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
                     (neurons, batch_size, epochs, time_steps), dpi=400)

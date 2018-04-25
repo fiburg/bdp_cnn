@@ -14,8 +14,9 @@ import numpy as np
 
 from keras.models import Sequential
 from keras.layers import Dense,LSTM
+from keras import optimizers
 from keras.preprocessing.sequence import TimeseriesGenerator
-from keras.callbacks import TensorBoard, ReduceLROnPlateau
+from keras.callbacks import ReduceLROnPlateau, History
 
 from sklearn.metrics import mean_squared_error
 from datetime import datetime as dt
@@ -59,7 +60,8 @@ class LSTM_model(NN):
         self.nb_epoch = nb_epoch
         self.neurons = neurons
         self.data_dim = 18432
-        self.time_steps=time_steps
+        self.time_steps = time_steps
+        self.history = None
 
     def getdata(self, file):
         """
@@ -121,6 +123,7 @@ class LSTM_model(NN):
                             input_shape=(self.time_steps,self.data_dim))),
         self.model.add(Dense(self.data_dim)) # <- does not really do much. Is just for output in right shape.
         self.model.compile(loss='mean_squared_error', optimizer='adam')
+        #self.model.compile(loss='mean_squared_error', optimizer=optimizers.Adadelta())
         return self
 
 
@@ -191,24 +194,25 @@ class LSTM_model(NN):
 
         """
 
-        #tb_callback = TensorBoard(
-        #    log_dir='./logs',
-        #    histogram_freq=10,
-        #    write_graph=True,
-        #    write_images=True
-        #)
+        # tensorboard not possible to use with validation generator in current keras version
+        #tb_callback = TensorBoard(...)
 
-        #reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2,
-        #                              patience=5)
+        reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2,
+                                      patience=5)
+
+        # history callback returns loss and validation loss for each epoch
+        history = History()
 
         callbacks = []
         #callbacks.append(tb_callback)
-        #callbacks.append(reduce_lr)
+        callbacks.append(reduce_lr)
+        callbacks.append(history)
 
-        hist = self.model.fit_generator(self.train_gen,shuffle=False,epochs=self.nb_epoch,
+        self.model.fit_generator(self.train_gen,shuffle=False,epochs=self.nb_epoch,
                                  validation_data=self.valid_gen, verbose=1,
                                  callbacks=callbacks)
 
+        self.history = history.history
 
     def init_pred_model(self):
         """
@@ -229,6 +233,7 @@ class LSTM_model(NN):
         self.model.add(Dense(self.data_dim))
         self.model.set_weights(weights)
         self.model.compile(loss='mean_squared_error', optimizer='adam')
+        #self.model.compile(loss='mean_squared_error', optimizer=optimizers.Adadelta())
 
 
     def evaluate(self):
@@ -270,7 +275,7 @@ if __name__ == "__main__":
     ev = Evaluater()
 
     neurons = 50
-    epochs = 1
+    epochs = 50
     time_steps = 12
     batch_size = int(64 / 4)
 
@@ -316,3 +321,6 @@ if __name__ == "__main__":
     # evaluate the model and plot the results
     ev.hist2d(truth, preds, neurons, batch_size, epochs, time_steps, runtime, path=path)
     ev.map_mae(truth, preds, neurons, batch_size, epochs, time_steps, runtime, path=path)
+
+    ev.model_history(model.history['loss'], model.history['val_loss'],
+                     neurons, batch_size, epochs, time_steps, runtime, path=path)
