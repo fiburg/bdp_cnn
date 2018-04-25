@@ -65,11 +65,22 @@ class LSTM_model(NN):
         Args:
             file: str: file name
         """
+        f0 = (4 * 1.5) * self.batch_size * self.time_steps + self.time_steps + 1
+        f1 = f0 + (4 * 0.25) * self.batch_size * self.time_steps + self.time_steps + 1
+        print(f0)
         _data = DataHandler().get_var(file ,var_name="var167")
         _data = DataHandler().shape(_data)
-        _data = scale().T(_data)
+        _data_data = scale().T(_data[:int(f0)])
+        _valid_data = scale().T(_data[int(f0):int(f1)])
+        _test_data = scale().T(_data[int(f1):])
 
-        self.data = _data
+
+        if self.data == None:
+            self.data = _data_data
+            self.valid_data = _valid_data
+            self.test_data = _test_data
+        else:
+            self.data.value = np.concatenate((self.data.value,_data_data.value),axis=0)
 
     def init_model(self,batch_size=None,nb_epoch=None,neurons=None):
         """
@@ -150,6 +161,23 @@ class LSTM_model(NN):
             length=self.time_steps, batch_size=1
         )
 
+    def create_ensemble_generator(self):
+        self.train_gen = TimeseriesGenerator(
+            self.data.value, self.data.value,
+            sampling_rate=1,shuffle=True, #shuffle=False is very important as we are dealing with continous timeseries
+            length=self.time_steps, batch_size=self.batch_size
+        )
+        self.valid_gen = TimeseriesGenerator(
+            self.valid_data.value, self.valid_data.value,
+            sampling_rate=1,shuffle=True,
+            length=self.time_steps, batch_size=self.batch_size
+        )
+
+        self.test_gen = TimeseriesGenerator(
+            self.test_data.value, self.test_data.value,
+            sampling_rate=1,shuffle=False,
+            length=self.time_steps, batch_size=1
+        )
 
     def fit_model(self):
         """
@@ -225,7 +253,7 @@ if __name__ == "__main__":
     time_steps = 12
     batch_size = int(64 / 4)
 
-    datafolder = glob.glob("./data/*")
+    datafolder = glob.glob("/home/mpim/m300517/Hausaufgaben/bdp_cnn/bdp_cnn/cmip5/data/*")
     print(datafolder)
     start = timeit.default_timer()
     model = LSTM_model(neurons=neurons, nb_epoch=epochs, time_steps=time_steps, batch_size=batch_size)
@@ -233,8 +261,9 @@ if __name__ == "__main__":
 
     for file in datafolder:
         model.getdata(file)
-        model.createGenerators()
-        model.fit_model()
+
+    model.create_ensemble_generator()
+    model.fit_model()
 
     model.init_pred_model()
     truth, preds = model.evaluate()
