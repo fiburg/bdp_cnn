@@ -15,6 +15,7 @@ import numpy as np
 from keras.models import Sequential
 from keras.layers import Dense,LSTM
 from keras.preprocessing.sequence import TimeseriesGenerator
+from keras.callbacks import TensorBoard
 
 from sklearn.metrics import mean_squared_error
 from datetime import datetime as dt
@@ -134,6 +135,8 @@ class LSTM_model(NN):
         print(f1)
         print(len(self.data.value))
 
+        print(self.data.value[int(f1):int(f1)+12].shape)
+
         self.train_gen = TimeseriesGenerator(
             self.data.value[:int(f0)], self.data.value[:int(f0)],
             sampling_rate=1,shuffle=False, #shuffle=False is very important as we are dealing with continous timeseries
@@ -158,8 +161,20 @@ class LSTM_model(NN):
         At the end the prediction-model will be initialized automatically and will replace the training model.
 
         """
-        self.model.fit_generator(self.train_gen,shuffle=False,epochs=self.nb_epoch,
-                                 validation_data=self.valid_gen, verbose=1)
+
+        tb_callback = TensorBoard(
+            log_dir='./logs',
+            histogram_freq=10,
+            write_graph=True,
+            write_images=True
+        )
+
+        callbacks = []
+        callbacks.append(tb_callback)
+
+        hist = self.model.fit_generator(self.train_gen,shuffle=False,epochs=self.nb_epoch,
+                                 validation_data=self.valid_gen, verbose=1,
+                                 callbacks=callbacks)
 
 
     def init_pred_model(self):
