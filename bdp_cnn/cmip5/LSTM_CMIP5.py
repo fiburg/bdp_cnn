@@ -221,11 +221,11 @@ if __name__ == "__main__":
     ev = Evaluater()
 
     neurons = 50
-    epochs = 1000
+    epochs = 1
     time_steps = 12
-    batch_size = int(32 / 4)
+    batch_size = int(64 / 4)
 
-    datafolder = glob.glob("/home/mpim/m300517/Hausaufgaben/bdp_cnn/bdp_cnn/cmip5/data/*")
+    datafolder = glob.glob("./data/*")
     print(datafolder)
     start = timeit.default_timer()
     model = LSTM_model(neurons=neurons, nb_epoch=epochs, time_steps=time_steps, batch_size=batch_size)
@@ -242,17 +242,16 @@ if __name__ == "__main__":
     preds = model.scale_invert(preds)
     stop = timeit.default_timer()
     runtime = stop-start
-
-    shape = preds.shape[0] * preds.shape[1]
-    rmse = np.sqrt(mean_squared_error(truth.reshape(shape), preds.reshape(shape)))
-    corr = np.corrcoef(truth.reshape(shape), preds.reshape(shape))[0,1]
     truth = dh.shape(truth,inverse=True)
     preds = dh.shape(preds,inverse=True)
 
     # save the model with results
     dh.save_model(model.model)
+
+    corr = ev.calc_corr(truth, preds)
+    rmse = ev.calc_rmse(truth, preds)
     dh.save_results(truth, preds, rmse, corr, runtime)
 
     # evaluate the model and plot the results
-    ev.hist2d(truth, preds, neurons, batch_size, epochs, time_steps, runtime, rmse, corr)
-    ev.map_mae(truth, preds, neurons, batch_size, epochs, time_steps, runtime, rmse, corr)
+    ev.hist2d(truth, preds, neurons, batch_size, epochs, time_steps, runtime)
+    ev.map_mae(truth, preds, neurons, batch_size, epochs, time_steps, runtime)

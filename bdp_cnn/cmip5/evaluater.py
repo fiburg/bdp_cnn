@@ -6,6 +6,7 @@ from matplotlib.colors import LogNorm
 from matplotlib import cm
 from mpl_toolkits.basemap import Basemap
 
+
 class Evaluater(object):
     """
     Class provides methods to evaluate the output data of the LSTM and to plot the results
@@ -17,9 +18,31 @@ class Evaluater(object):
         self.ymax = 350
         self.corr_all = []
         self.rmse_all = []
+        self.bias_all = []
 
+    def calc_corr(self, ytest, ypred):
+        shape = ypred.shape[1] * ypred.shape[2]
 
-    def scatter(self, ytest, ypred, neurons, batch_size, epochs, time_steps, runtime, rmse, corr, path="./"):
+        for t in range(ypred.shape[0]):
+            yt = ytest[t,:,:]
+            yp = ypred[t,:,:]
+
+            self.corr_all.append(np.corrcoef(yt.reshape(shape), yp.reshape(shape))[0,1])
+
+        return np.mean(self.corr_all)
+
+    def calc_rmse(self, ytest, ypred):
+        shape = ypred.shape[1] * ypred.shape[2]
+
+        for t in range(ypred.shape[0]):
+            yt = ytest[t, :, :]
+            yp = ypred[t, :, :]
+
+            self.rmse_all.append(np.sqrt(mean_squared_error(yt.reshape(shape), yp.reshape(shape))))
+
+        return np.mean(self.rmse_all)
+
+    def scatter(self, ytest, ypred, neurons, batch_size, epochs, time_steps, runtime, path="./"):
         """
         Creates a scatterplot plotting the truth vs. the prediction.
         Furthermore plots a regression line and writes some stats in the tilte.
@@ -29,6 +52,9 @@ class Evaluater(object):
             ypred: numpy array, prediction
             runtime: int, time of model run in seconds
         """
+        rmse = self.calc_rmse(ytest, ypred)
+        corr = self.calc_corr(ytest, ypred)
+
         shape = ytest.shape[0], ytest.shape[1] * ytest.shape[2]
 
         reg = np.polyfit(ytest.reshape(shape), ypred.reshape(shape), 1)
@@ -74,18 +100,8 @@ class Evaluater(object):
             runtime: float, runtime of model run in seconds
             path: str, path for output
         """
-        shape = ypred.shape[1] * ypred.shape[2]
-        s1 = ypred.shape[0]
-        # statistics
-
-        for t in range(ypred.shape[0]):
-            yt = ytest[t,:,:]
-            yp = ypred[t,:,:]
-            self.rmse_all.append(np.sqrt(mean_squared_error(yt.reshape(shape), yp.reshape(shape))))
-            self.corr_all.append(np.corrcoef(yt.reshape(shape), yp.reshape(shape))[0,1])
-
-        rmse = np.mean(self.rmse_all)
-        corr = np.mean(self.corr_all)
+        rmse = self.calc_rmse(ytest, ypred)
+        corr = self.calc_corr(ytest, ypred)
 
         shape = ypred.shape[0] * ypred.shape[1] * ypred.shape[2]
 
@@ -131,17 +147,14 @@ class Evaluater(object):
         Plots the mean absolute error between the truth and prediction on the map.
 
         Args:
-            ytest:
-            ypred:
-            neurons:
-            batch_size:
-            epochs:
-            time_steps:
-            runtime:
-            path:
-
-        Returns:
-
+            ytest: numpy array: truth
+            ypred: numpy array: prediction
+            neurons: int: number of neurons in LSTM
+            batch_size: int: batch size in LSTM
+            epochs: int: number of epochs in LSTM
+            time_steps: int: number of time steps in LSTM
+            runtime: float: runtime of model run in seconds
+            path: str: path for output
         """
         diff = ytest - ypred
 
@@ -180,9 +193,6 @@ class Evaluater(object):
         cp = plt.contourf(X, Y, mae, cmap=cm.seismic, levels=levels, extend="both", alpha=0.9)
         cb = plt.colorbar(cp, ticks=ticks)
         cb.set_label(r'CMIP5 Temperature - Pred. Temperature ($\Delta{}$K)')
-
-        #ax.set_xlabel("lat")
-        #ax.set_ylabel("lon")
 
         plt.tight_layout()
 
