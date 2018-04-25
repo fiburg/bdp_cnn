@@ -17,6 +17,7 @@ from keras.layers import Dense,LSTM
 from keras.preprocessing.sequence import TimeseriesGenerator
 
 from sklearn.metrics import mean_squared_error
+from datetime import datetime as dt
 import timeit
 import glob
 
@@ -245,13 +246,17 @@ if __name__ == "__main__":
     truth = dh.shape(truth,inverse=True)
     preds = dh.shape(preds,inverse=True)
 
+    # OUTPUT
+    folder = dt.now().strftime("%Y%m%d_%H%M_%Ss/")
+    path = './runs/' + folder
+
     # save the model with results
-    dh.save_model(model.model)
+    dh.save_model(model.model, path=path)
 
     corr = ev.calc_corr(truth, preds)
     rmse = ev.calc_rmse(truth, preds)
-    dh.save_results(truth, preds, rmse, corr, runtime)
+    dh.save_results(truth, preds, rmse, corr, runtime, path=path)
 
     # evaluate the model and plot the results
-    ev.hist2d(truth, preds, neurons, batch_size, epochs, time_steps, runtime)
-    ev.map_mae(truth, preds, neurons, batch_size, epochs, time_steps, runtime)
+    ev.hist2d(truth, preds, neurons, batch_size, epochs, time_steps, runtime, path=path)
+    ev.map_mae(truth, preds, neurons, batch_size, epochs, time_steps, runtime, path=path)

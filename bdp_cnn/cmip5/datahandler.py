@@ -74,7 +74,7 @@ class DataHandler(object):
         else:
             return np.reshape(array,(array.shape[0],lat,lon))
 
-    def save_results(self,trues,preds,rmse,corr,runtime,file=None,folder=""):
+    def save_results(self,trues,preds,rmse,corr,runtime,file=None,path=''):
         """
         saves the lstm results to netcdf.
 
@@ -85,14 +85,17 @@ class DataHandler(object):
             corr: float: correlation
             runtime: float: lstm runtime
             file: str: path of output file
-            folder: str: path of output folder
+            path: str: path of output folder
         """
+
+        if path != '' and not os.path.exists(path):
+            os.mkdir(path)
 
         if not file:
             now = dt.now().strftime("%Y%m%d_%H%M_%Ss")
             file = "RMSE%.2f_%s.nc"%(rmse,now)
 
-        file = folder + file
+        file = path + file
 
         nc = Dataset(file, mode="w")
 
@@ -117,13 +120,13 @@ class DataHandler(object):
 
         nc.close()
 
-    def get_results(self, file, folder=""):
+    def get_results(self, file, path=''):
         """
         reads the results of the lstm model netcdf output.
 
         Args:
             file: str: filename
-            folder: str: file path
+            path: str: file path
 
         Returns:
             trues: numpy array: true values
@@ -133,7 +136,7 @@ class DataHandler(object):
             runtime: float: lstm runtime
         """
 
-        nc = Dataset(file, mode='r')
+        nc = Dataset(path+file, mode='r')
 
         preds = nc.variables['predictions'][:]
         trues = nc.variables['true_values'][:]
@@ -146,7 +149,7 @@ class DataHandler(object):
 
         return trues, preds, runtime, rmse, corr
 
-    def save_model(self, model, folder=None):
+    def save_model(self, model, path=''):
         """
         Saves the model as json file with the trained weights in same folder.
 
@@ -156,18 +159,13 @@ class DataHandler(object):
         """
         json_model = model.to_json()
 
-        now = dt.now().strftime("%Y%m%d_%H%M_%Ss/")
-        if not folder:
-            folder = now
-        else:
-            folder += now
+        if path != '' and not os.path.exists(path):
+            os.mkdir(path)
 
-        os.mkdir(folder)
-        with open(folder + "model.json", "w") as f:
+        with open(path + "model.json", "w") as f:
             f.write(json_model)
 
-        model.save_weights(folder + "weights.h5")
-
+        model.save_weights(path + "weights.h5")
 
 if __name__ == "__main__":
     dh = DataHandler()

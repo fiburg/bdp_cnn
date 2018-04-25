@@ -42,7 +42,7 @@ class Evaluater(object):
 
         return np.mean(self.rmse_all)
 
-    def scatter(self, ytest, ypred, neurons, batch_size, epochs, time_steps, runtime, path="./"):
+    def scatter(self, ytest, ypred, neurons, batch_size, epochs, time_steps, runtime, path=''):
         """
         Creates a scatterplot plotting the truth vs. the prediction.
         Furthermore plots a regression line and writes some stats in the tilte.
@@ -82,7 +82,7 @@ class Evaluater(object):
         ax.set_xlim(self.ymin, self.ymax)
         ax.set_ylim(self.ymin, self.ymax)
         print("\t saving figure...")
-        plt.savefig("Images/LSTM_scatter_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
+        plt.savefig(path+"LSTM_scatter_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
                     (neurons, batch_size, epochs, time_steps), dpi=400)
 
     def hist2d(self, ytest, ypred, neurons, batch_size, epochs, time_steps, runtime, path="./"):
@@ -139,7 +139,7 @@ class Evaluater(object):
 
         print("\t saving figure...")
 
-        plt.savefig("Images/LSTM_hist2d_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
+        plt.savefig(path+"LSTM_hist2d_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
                     (neurons, batch_size, epochs, time_steps), dpi=400)
 
     def map_mae(self, ytest, ypred, neurons, batch_size, epochs, time_steps, runtime, path="./"):
@@ -198,5 +198,5 @@ class Evaluater(object):
 
         print("\t saving figure...")
 
-        plt.savefig("Images/LSTM_maemap_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
+        plt.savefig(path+"LSTM_maemap_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
                     (neurons, batch_size, epochs, time_steps), dpi=400)
