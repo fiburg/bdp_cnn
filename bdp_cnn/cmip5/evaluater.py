@@ -19,7 +19,7 @@ class Evaluater(object):
         self.rmse_all = []
 
 
-    def scatter(self, ytest, ypred, neurons, batch_size, epochs, time_steps, runtime, path="./"):
+    def scatter(self, ytest, ypred, neurons, batch_size, epochs, time_steps, runtime, rmse, corr, path="./"):
         """
         Creates a scatterplot plotting the truth vs. the prediction.
         Furthermore plots a regression line and writes some stats in the tilte.
@@ -29,15 +29,11 @@ class Evaluater(object):
             ypred: numpy array, prediction
             runtime: int, time of model run in seconds
         """
+        shape = ytest.shape[0], ytest.shape[1] * ytest.shape[2]
 
-        shape = ypred.shape[0] * ypred.shape[1]
-
-        rmse = np.sqrt(mean_squared_error(ytest.reshape(shape), ypred.reshape(shape)))
-        corr = np.corrcoef(ytest.reshape(shape), ypred.reshape(shape))
-
-        m, b = np.polyfit(ytest.reshape(shape), ypred.reshape(shape), 1)
+        reg = np.polyfit(ytest.reshape(shape), ypred.reshape(shape), 1)
         x = range(self.ymin, self.ymax, 1)
-        yreg = np.add(np.multiply(m, x), b)
+        yreg = np.add(np.multiply(reg[0], x), reg[1])
 
         print("plotting results as scatter plot...")
 
@@ -49,7 +45,7 @@ class Evaluater(object):
                 batch_size,
                 epochs,
                 time_steps,
-                rmse, corr[0, 1],runtime))
+                rmse, corr, runtime))
         ax.plot(ytest.reshape(shape), ypred.reshape(shape), lw=0, marker=".", color="blue", alpha=0.05,
                 markeredgewidth=0.0)
         ax.plot(x, yreg, '-', label="Regression", color="red", lw=2)
@@ -94,23 +90,23 @@ class Evaluater(object):
         shape = ypred.shape[0] * ypred.shape[1] * ypred.shape[2]
 
         # linear regression
-        m, b = np.polyfit(ytest.reshape(shape), ypred.reshape(shape), 1)
+        reg = np.polyfit(ytest.reshape(shape), ypred.reshape(shape), 1)
         x = range(self.ymin-10, self.ymax+10, 1)
-        yreg = np.add(np.multiply(m, x), b)
+        yreg = np.add(np.multiply(reg[0], x), reg[1])
 
         # plotting
         print("plotting results as hist2d plot...")
 
         fig, ax = plt.subplots(figsize=(7, 4))
 
-        # fig.suptitle(
-        #     'LSTM with {0} neurons, {1} batchsize, {2} epochs and {3} timesteps\n RMSE = {4:.3f} ' \
-        #     'and CORR = {5:.3f}, runtime = {6:.2f} s'.format(
-        #         neurons,
-        #         batch_size,
-        #         epochs,
-        #         time_steps,
-        #         rmse, corr, runtime))
+        fig.suptitle(
+            'LSTM with {0} neurons, {1} batchsize, {2} epochs and {3} timesteps\n RMSE = {4:.3f} ' \
+            'and CORR = {5:.3f}, runtime = {6:.2f} s'.format(
+                neurons,
+                batch_size,
+                epochs,
+                time_steps,
+                rmse, corr, runtime))
 
         plt.hist2d(ytest.reshape(shape), ypred.reshape(shape), bins=50, cmap='Greys', norm=LogNorm())
         plt.plot(x, yreg, '--', label="Regression", color='k', lw=1)
@@ -127,8 +123,8 @@ class Evaluater(object):
 
         print("\t saving figure...")
 
-        # plt.savefig("Images/LSTM_hist2d_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
-        #             (neurons, batch_size, epochs, time_steps), dpi=400)
+        plt.savefig("Images/LSTM_hist2d_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
+                    (neurons, batch_size, epochs, time_steps), dpi=400)
 
     def map_mae(self, ytest, ypred, neurons, batch_size, epochs, time_steps, runtime, path="./"):
         """
