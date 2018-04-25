@@ -15,6 +15,9 @@ class Evaluater(object):
         # limits for plotting space
         self.ymin = 150
         self.ymax = 350
+        self.corr_all = []
+        self.rmse_all = []
+
 
     def scatter(self, ytest, ypred, neurons, batch_size, epochs, time_steps, runtime, path="./"):
         """
@@ -75,11 +78,20 @@ class Evaluater(object):
             runtime: float, runtime of model run in seconds
             path: str, path for output
         """
-        shape = ypred.shape[0] * ypred.shape[1]
-
+        shape = ypred.shape[1] * ypred.shape[2]
+        s1 = ypred.shape[0]
         # statistics
-        rmse = np.sqrt(mean_squared_error(ytest.reshape(shape), ypred.reshape(shape)))
-        corr = np.corrcoef(ytest.reshape(shape), ypred.reshape(shape))
+
+        for t in range(ypred.shape[0]):
+            yt = ytest[t,:,:]
+            yp = ypred[t,:,:]
+            self.rmse_all.append(np.sqrt(mean_squared_error(yt.reshape(shape), yp.reshape(shape))))
+            self.corr_all.append(np.corrcoef(yt.reshape(shape), yp.reshape(shape))[0,1])
+
+        rmse = np.mean(self.rmse_all)
+        corr = np.mean(self.corr_all)
+
+        shape = ypred.shape[0] * ypred.shape[1] * ypred.shape[2]
 
         # linear regression
         m, b = np.polyfit(ytest.reshape(shape), ypred.reshape(shape), 1)
@@ -91,14 +103,14 @@ class Evaluater(object):
 
         fig, ax = plt.subplots(figsize=(7, 4))
 
-        fig.suptitle(
-            'LSTM with {0} neurons, {1} batchsize, {2} epochs and {3} timesteps\n RMSE = {4:.3f} ' \
-            'and CORR = {5:.3f}, runtime = {6:.2f} s'.format(
-                neurons,
-                batch_size,
-                epochs,
-                time_steps,
-                rmse, corr[0, 1], runtime))
+        # fig.suptitle(
+        #     'LSTM with {0} neurons, {1} batchsize, {2} epochs and {3} timesteps\n RMSE = {4:.3f} ' \
+        #     'and CORR = {5:.3f}, runtime = {6:.2f} s'.format(
+        #         neurons,
+        #         batch_size,
+        #         epochs,
+        #         time_steps,
+        #         rmse, corr, runtime))
 
         plt.hist2d(ytest.reshape(shape), ypred.reshape(shape), bins=50, cmap='Greys', norm=LogNorm())
         plt.plot(x, yreg, '--', label="Regression", color='k', lw=1)
@@ -115,8 +127,8 @@ class Evaluater(object):
 
         print("\t saving figure...")
 
-        plt.savefig("Images/LSTM_hist2d_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
-                    (neurons, batch_size, epochs, time_steps), dpi=400)
+        # plt.savefig("Images/LSTM_hist2d_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
+        #             (neurons, batch_size, epochs, time_steps), dpi=400)
 
     def map_mae(self, ytest, ypred, neurons, batch_size, epochs, time_steps, runtime, path="./"):
         """

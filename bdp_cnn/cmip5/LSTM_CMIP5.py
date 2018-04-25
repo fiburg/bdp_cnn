@@ -354,10 +354,10 @@ def autorun(neurons,epochs,time_steps,batch_size):
 
 if __name__ == "__main__":
 
-    neurons = 200
-    epochs = 100
+    neurons = 50
+    epochs = 1000
     time_steps = 12
-    batch_size = int(64 / 4)
+    batch_size = int(32 / 4)
 
     datafolder = glob.glob("/home/mpim/m300517/Hausaufgaben/bdp_cnn/bdp_cnn/cmip5/data/*")
     print(datafolder)
