@@ -99,6 +99,9 @@ class Evaluater(object):
 
         fig, ax = plt.subplots(figsize=(7, 4))
 
+        print(runtime)
+        print(type(runtime))
+
         fig.suptitle(
             'LSTM with {0} neurons, {1} batchsize, {2} epochs and {3} timesteps\n RMSE = {4:.3f} ' \
             'and CORR = {5:.3f}, runtime = {6:.2f} s'.format(
@@ -123,7 +126,7 @@ class Evaluater(object):
 
         print("\t saving figure...")
 
-        plt.savefig("Images/LSTM_hist2d_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
+        plt.savefig(path+"LSTM_hist2d_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
                     (neurons, batch_size, epochs, time_steps), dpi=400)
 
     def map_mae(self, ytest, ypred, neurons, batch_size, epochs, time_steps, runtime, path="./"):
@@ -188,5 +191,5 @@ class Evaluater(object):
 
         print("\t saving figure...")
 
-        plt.savefig("Images/LSTM_maemap_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
+        plt.savefig(path+"LSTM_maemap_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
                     (neurons, batch_size, epochs, time_steps), dpi=400)
