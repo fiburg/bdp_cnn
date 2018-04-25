@@ -15,12 +15,13 @@ import numpy as np
 from keras.models import Sequential
 from keras.layers import Dense,LSTM
 from keras.preprocessing.sequence import TimeseriesGenerator
-from keras.callbacks import TensorBoard
+from keras.callbacks import TensorBoard, ReduceLROnPlateau
 
 from sklearn.metrics import mean_squared_error
 from datetime import datetime as dt
 import timeit
 import glob
+import os
 
 class LSTM_model(NN):
     """
@@ -190,15 +191,19 @@ class LSTM_model(NN):
 
         """
 
-        tb_callback = TensorBoard(
-            log_dir='./logs',
-            histogram_freq=10,
-            write_graph=True,
-            write_images=True
-        )
+        #tb_callback = TensorBoard(
+        #    log_dir='./logs',
+        #    histogram_freq=10,
+        #    write_graph=True,
+        #    write_images=True
+        #)
+
+        #reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2,
+        #                              patience=5)
 
         callbacks = []
-        callbacks.append(tb_callback)
+        #callbacks.append(tb_callback)
+        #callbacks.append(reduce_lr)
 
         hist = self.model.fit_generator(self.train_gen,shuffle=False,epochs=self.nb_epoch,
                                  validation_data=self.valid_gen, verbose=1,
@@ -269,7 +274,8 @@ if __name__ == "__main__":
     time_steps = 12
     batch_size = int(64 / 4)
 
-    datafolder = glob.glob("/home/mpim/m300517/Hausaufgaben/bdp_cnn/bdp_cnn/cmip5/data/*")
+    #datafolder = glob.glob("/home/mpim/m300517/Hausaufgaben/bdp_cnn/bdp_cnn/cmip5/data/*")
+    datafolder = glob.glob("./data/*")
     print(datafolder)
     start = timeit.default_timer()
     model = LSTM_model(neurons=neurons, nb_epoch=epochs, time_steps=time_steps, batch_size=batch_size)
@@ -293,6 +299,9 @@ if __name__ == "__main__":
     # OUTPUT
     folder = dt.now().strftime("%Y%m%d_%H%M_%Ss/")
     path = './runs/' + folder
+
+    if not os.path.exists('./runs/'):
+        os.mkdir('./runs/')
 
     # save the model with results
     dh.save_model(model.model, path=path)

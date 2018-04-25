@@ -115,9 +115,6 @@ class Evaluater(object):
 
         fig, ax = plt.subplots(figsize=(7, 4))
 
-        print(runtime)
-        print(type(runtime))
-
         fig.suptitle(
             'LSTM with {0} neurons, {1} batchsize, {2} epochs and {3} timesteps\n RMSE = {4:.3f} ' \
             'and CORR = {5:.3f}, runtime = {6:.2f} s'.format(
