@@ -1,11 +1,14 @@
 from netCDF4 import Dataset
 import numpy as np
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 from sklearn.metrics import mean_squared_error
 from matplotlib.colors import LogNorm
 from matplotlib import cm
 from mpl_toolkits.basemap import Basemap
-
+from bdp_cnn.cmip5.datahandler import DataHandler
 
 class Evaluater(object):
     """
@@ -201,8 +204,7 @@ class Evaluater(object):
         plt.savefig(path+"LSTM_maemap_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
                     (neurons, batch_size, epochs, time_steps), dpi=400)
 
-    def model_history(self, loss, val_loss, neurons, batch_size, epochs, time_steps, runtime, path="./"):
-        print(True)
+    def model_loss(self, loss, val_loss, neurons, batch_size, epochs, time_steps, runtime, path="./"):
         fig, ax = plt.subplots(figsize=(7, 4))
 
         fig.suptitle(
@@ -219,10 +221,60 @@ class Evaluater(object):
         ax.plot(xep, loss, label='loss')
         ax.plot(xep, val_loss, label='val_loss')
 
+        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+
         ax.set_xlabel('epochs')
         ax.set_ylabel('loss')
         ax.legend()
         ax.grid()
 
-        plt.savefig(path + "LSTM_history_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
+        plt.savefig(path + "LSTM_losshistory_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
                     (neurons, batch_size, epochs, time_steps), dpi=400)
+
+    def model_lr(self, lr, neurons, batch_size, epochs, time_steps, runtime, path="./"):
+        fig, ax = plt.subplots(figsize=(7, 4))
+
+        fig.suptitle(
+            'LSTM with {0} neurons, {1} batchsize, {2} epochs and {3} timesteps\n ' \
+            'and runtime = {4:.2f} s'.format(
+                neurons,
+                batch_size,
+                epochs,
+                time_steps,
+                runtime))
+
+        xep = np.arange(epochs)+1
+
+        ax.plot(xep, lr)
+
+        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+
+        ax.set_xlabel('epochs')
+        ax.set_ylabel('learning rate')
+        ax.grid()
+
+        plt.savefig(path + "LSTM_lrhistory_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
+                    (neurons, batch_size, epochs, time_steps), dpi=400)
+
+if __name__ == "__main__":
+    neurons = 50
+    epochs = 20
+    time_steps = 12
+    batch_size = int(64 / 4)
+
+    # change working/data directory
+    wdir = './'
+    #wdir = "/home/mpim/m300517/Hausaufgaben/bdp_cnn/bdp_cnn/cmip5/"
+
+    # implement run directory
+    folder = '20180428_1959_12s'
+    path = wdir + 'runs/' + folder + '/'
+
+    ev = Evaluater()
+    dh = DataHandler()
+
+    history = dh.get_history(path=path)
+    ev.model_loss(history['loss'], history['val_loss'],
+                     neurons, batch_size, epochs, time_steps, 0, path=path)
+    ev.model_lr(history['lr'],
+                  neurons, batch_size, epochs, time_steps, 0, path=path)

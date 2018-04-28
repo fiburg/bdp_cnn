@@ -16,7 +16,8 @@ from keras.models import Sequential
 from keras.layers import Dense,LSTM
 from keras import optimizers
 from keras.preprocessing.sequence import TimeseriesGenerator
-from keras.callbacks import ReduceLROnPlateau, History
+from keras.callbacks import ReduceLROnPlateau, History, CSVLogger, Callback
+from keras.backend import eval
 
 from sklearn.metrics import mean_squared_error
 from datetime import datetime as dt
@@ -61,7 +62,7 @@ class LSTM_model(NN):
         self.neurons = neurons
         self.data_dim = 18432
         self.time_steps = time_steps
-        self.history = None
+        self.path = ''
 
     def getdata(self, file):
         """
@@ -200,19 +201,22 @@ class LSTM_model(NN):
         reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2,
                                       patience=5)
 
+        csv_logger = CSVLogger(self.path+'training.log')
+
         # history callback returns loss and validation loss for each epoch
-        history = History()
+        #history = History()
 
         callbacks = []
         #callbacks.append(tb_callback)
         callbacks.append(reduce_lr)
-        callbacks.append(history)
+        #callbacks.append(history)
+        callbacks.append(csv_logger)
 
         self.model.fit_generator(self.train_gen,shuffle=False,epochs=self.nb_epoch,
                                  validation_data=self.valid_gen, verbose=1,
                                  callbacks=callbacks)
 
-        self.history = history.history
+        #self.history = history.history
 
     def init_pred_model(self):
         """
@@ -275,7 +279,7 @@ if __name__ == "__main__":
     ev = Evaluater()
 
     neurons = 50
-    epochs = 50
+    epochs = 20
     time_steps = 12
     batch_size = int(64 / 4)
 
@@ -283,10 +287,23 @@ if __name__ == "__main__":
     wdir = './'
     #wdir = "/home/mpim/m300517/Hausaufgaben/bdp_cnn/bdp_cnn/cmip5/"
 
+    # data
     datafolder = glob.glob(wdir + "data/*")
     print(datafolder)
+
+    # implement run directory
+    folder = dt.now().strftime("%Y%m%d_%H%M_%Ss/")
+    path = wdir + 'runs/' + folder
+
+    if not os.path.exists(path):
+        os.mkdir(path)
+        print('make dir :'+path)
+
+
+    # begin of model run
     start = timeit.default_timer()
     model = LSTM_model(neurons=neurons, nb_epoch=epochs, time_steps=time_steps, batch_size=batch_size)
+    model.path = path
     model.init_model()
 
     for file in datafolder:
@@ -299,18 +316,13 @@ if __name__ == "__main__":
     truth, preds = model.evaluate()
     truth = model.scale_invert(truth)
     preds = model.scale_invert(preds)
-    stop = timeit.default_timer()
-    runtime = stop-start
     truth = dh.shape(truth,inverse=True)
     preds = dh.shape(preds,inverse=True)
+    stop = timeit.default_timer()
+    runtime = stop - start
+    # end of model run
 
-    # OUTPUT
-    folder = dt.now().strftime("%Y%m%d_%H%M_%Ss/")
-    path = wdir + 'runs/' + folder
-
-    if not os.path.exists(wdir + 'runs/'):
-        os.mkdir(wdir + 'runs/')
-
+    # OUTPUT and EVALUATION
     # save the model with results
     dh.save_model(model.model, path=path)
 
@@ -319,8 +331,12 @@ if __name__ == "__main__":
     dh.save_results(truth, preds, rmse, corr, runtime, path=path)
 
     # evaluate the model and plot the results
-    ev.hist2d(truth, preds, neurons, batch_size, epochs, time_steps, runtime, path=path)
-    ev.map_mae(truth, preds, neurons, batch_size, epochs, time_steps, runtime, path=path)
-
-    ev.model_history(model.history['loss'], model.history['val_loss'],
+    ev.hist2d(truth, preds,
+              neurons, batch_size, epochs, time_steps, runtime, path=path)
+    ev.map_mae(truth, preds,
+               neurons, batch_size, epochs, time_steps, runtime, path=path)
+    history = dh.get_history(path=path)
+    ev.model_loss(history['loss'], history['val_loss'],
                      neurons, batch_size, epochs, time_steps, runtime, path=path)
+    ev.model_lr(history['lr'],
+                  neurons, batch_size, epochs, time_steps, runtime, path=path)

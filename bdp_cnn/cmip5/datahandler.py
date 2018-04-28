@@ -1,6 +1,8 @@
 from netCDF4 import Dataset
+import csv
 import numpy as np
 from datetime import datetime as dt
+import collections
 import time
 import os
 
@@ -167,8 +169,35 @@ class DataHandler(object):
 
         model.save_weights(path + "weights.h5")
 
+    def get_history(self, file='training.log', path=''):
+
+        keys = []
+        epochs = []
+        loss = []
+        lr = []
+        val_loss = []
+
+        with open(path+file) as csvfile:
+            reader = csv.reader(csvfile, delimiter=',')
+            for row in reader:
+                if not keys:
+                    keys = row
+                else:
+                    epochs.append(int(row[0]))
+                    loss.append(float(row[1]))
+                    lr.append(float(row[2]))
+                    val_loss.append(float(row[3]))
+
+        history = {keys[0]: epochs,
+                   keys[1]: loss,
+                   keys[2]: lr,
+                   keys[3]: val_loss}
+
+        return history
+
 if __name__ == "__main__":
     dh = DataHandler()
-    dh.get_results("RMSE7.09_20180424_1059_24s.nc")
+    #dh.get_results("RMSE7.09_20180424_1059_24s.nc")
+    #dh.get_history()
     #test = dh.get_var('./data/lkm0401_echam6_BOT_mm_1850-2005.nc', 'var167')
     #dh.get_dims('./data/lkm0401_echam6_BOT_mm_1850-2005.nc')
