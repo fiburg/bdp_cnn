@@ -1,7 +1,7 @@
 from netCDF4 import Dataset
 import numpy as np
 import matplotlib
-matplotlib.use("Agg")
+# matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from sklearn.metrics import mean_squared_error

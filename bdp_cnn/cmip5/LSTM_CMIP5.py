@@ -4,7 +4,7 @@ For an example to define a complete model run checkout the function autorun at t
 """
 
 import matplotlib
-matplotlib.use("Agg")
+# matplotlib.use("Agg")
 from bdp_cnn.cmip5.datahandler import DataHandler
 
 from bdp_cnn.Lorenz.NN_Lorenz import NN
@@ -328,7 +328,7 @@ if __name__ == "__main__":
 
     corr = ev.calc_corr(truth, preds)
     rmse = ev.calc_rmse(truth, preds)
-    dh.save_results(truth, preds, rmse, corr, runtime, path=path)
+    dh.save_results(truth, preds, rmse, corr, runtime, neurons,epochs,time_steps,batch_size, path=path)
 
     # evaluate the model and plot the results
     ev.hist2d(truth, preds,

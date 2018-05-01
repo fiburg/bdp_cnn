@@ -76,7 +76,7 @@ class DataHandler(object):
         else:
             return np.reshape(array,(array.shape[0],lat,lon))
 
-    def save_results(self,trues,preds,rmse,corr,runtime,file=None,path=''):
+    def save_results(self,trues,preds,rmse,corr,runtime,neurons,epochs, time_steps,batch_size, file=None,path=''):
         """
         saves the lstm results to netcdf.
 
@@ -105,6 +105,10 @@ class DataHandler(object):
         nc.RMSE = str(round(rmse,5))
         nc.CORR = str(round(corr,5))
         nc.Runtime = str(round(runtime,2))
+        nc.epochs = str(epochs)
+        nc.timesteps = str(time_steps)
+        nc.batchsize = str(batch_size)
+        nc.neurons = str(neurons)
 
         nc.createDimension("time",trues.shape[0])
         nc.createDimension("lat",trues.shape[1])
