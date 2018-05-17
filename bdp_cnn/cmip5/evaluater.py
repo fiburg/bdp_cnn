@@ -22,6 +22,7 @@ class Evaluater(object):
         self.corr_all = []
         self.rmse_all = []
         self.bias_all = []
+        self.std_all = []
 
     def calc_corr(self, ytest, ypred):
         shape = ypred.shape[1] * ypred.shape[2]
@@ -35,15 +36,42 @@ class Evaluater(object):
         return np.mean(self.corr_all)
 
     def calc_rmse(self, ytest, ypred):
-        shape = ypred.shape[1] * ypred.shape[2]
 
         for t in range(ypred.shape[0]):
-            yt = ytest[t, :, :]
-            yp = ypred[t, :, :]
+            diff = ypred[t, :, :] - ytest[t, :, :]
 
-            self.rmse_all.append(np.sqrt(mean_squared_error(yt.reshape(shape), yp.reshape(shape))))
+            rmse = np.sqrt(np.mean(np.square(diff), axis=(0, 1)))
+
+            self.rmse_all.append(rmse)
 
         return np.mean(self.rmse_all)
+
+    def calc_bias(self, ytest, ypred):
+        diff = ypred - ytest
+
+        bias = np.mean(diff, axis=(1,2))
+
+        for t in range(ypred.shape[0]):
+            self.bias_all.append(bias[t])
+
+        return np.mean(self.bias_all)
+
+    def calc_std(self, ytest, ypred):
+        ypred_mean = np.mean(ypred, axis=(1, 2))
+        ytest_mean = np.mean(ytest, axis=(1, 2))
+
+        for t in range(ypred.shape[0]):
+            ypred[t, :, :] = ypred[t, :, :] - ypred_mean[t]
+            ytest[t, :, :] = ytest[t, :, :] - ytest_mean[t]
+
+            diff_unbiased = ypred[t, :, :] - ytest[t, :, :]
+
+            std = np.sqrt(np.mean(np.square(diff_unbiased), axis=(0,1)))
+
+            self.std_all.append(std)
+
+        return np.mean(self.std_all)
+
 
     def scatter(self, ytest, ypred, neurons, batch_size, epochs, time_steps, runtime, path=''):
         """
@@ -256,6 +284,43 @@ class Evaluater(object):
         plt.savefig(path + "LSTM_lrhistory_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
                     (neurons, batch_size, epochs, time_steps), dpi=400)
 
+    def global_mean(self, time, data, neurons, batch_size, epochs, time_steps, runtime, path="./"):
+        pass
+        """
+        ytest = data[1]
+        ypred = data[2]
+
+        test_mean = np.mean(ytest, axis=1)
+        test_mean = np.mean(test_mean, axis=1)
+
+        pred_mean = np.mean(ytest, axis=1)
+        pred_mean = np.mean(pred_mean, axis=1)
+
+        fig, ax = plt.subplots(figsize=(7, 4))
+
+        fig.suptitle(
+            'LSTM with {0} neurons, {1} batchsize, {2} epochs and {3} timesteps\n ' \
+            'and runtime = {4:.2f} s'.format(
+                neurons,
+                batch_size,
+                epochs,
+                time_steps,
+                runtime))
+
+        xep = np.arange(epochs) + 1
+
+        ax.plot(time, test_mean, label='CMIP5')
+        ax.plot(time, pred_mean, label='LSTM')
+
+        ax.set_ylabel('Global Mean Temperature (K)')
+        ax.legend()
+        ax.grid()
+
+        plt.savefig(path + "LSTM_globmean_%ineurons_%ibatchsize_%iepochs_%itimesteps.png" %
+                    (neurons, batch_size, epochs, time_steps), dpi=400)
+
+        """
+
 if __name__ == "__main__":
     neurons = 50
     epochs = 20
@@ -267,7 +332,7 @@ if __name__ == "__main__":
     #wdir = "/home/mpim/m300517/Hausaufgaben/bdp_cnn/bdp_cnn/cmip5/"
 
     # implement run directory
-    folder = '20180428_1959_12s'
+    folder = '20180517_1430_31s'
     path = wdir + 'runs/' + folder + '/'
 
     ev = Evaluater()

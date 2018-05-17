@@ -279,7 +279,7 @@ if __name__ == "__main__":
     ev = Evaluater()
 
     neurons = 50
-    epochs = 20
+    epochs = 1
     time_steps = 12
     batch_size = int(64 / 4)
 
@@ -328,6 +328,9 @@ if __name__ == "__main__":
 
     corr = ev.calc_corr(truth, preds)
     rmse = ev.calc_rmse(truth, preds)
+    bias = ev.calc_bias(truth, preds)
+    std = ev.calc_std(truth, preds)
+
     dh.save_results(truth, preds, rmse, corr, runtime, path=path)
 
     # evaluate the model and plot the results
