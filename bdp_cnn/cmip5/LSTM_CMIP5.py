@@ -4,7 +4,7 @@ For an example to define a complete model run checkout the function autorun at t
 """
 
 import matplotlib
-# matplotlib.use("Agg")
+matplotlib.use("Agg")
 from bdp_cnn.cmip5.datahandler import DataHandler
 
 from bdp_cnn.Lorenz.NN_Lorenz import NN
