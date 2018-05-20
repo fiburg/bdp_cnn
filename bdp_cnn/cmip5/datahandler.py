@@ -148,12 +148,14 @@ class DataHandler(object):
         trues = nc.variables['true_values'][:]
 
         runtime = nc.Runtime
-        rmse = nc.RMSE
-        corr = nc.CORR
+        epochs = nc.epochs
+        timesteps = nc.timesteps
+        batchsize = nc.batchsize
+        neurons = nc.neurons
 
         nc.close()
 
-        return trues, preds, runtime, rmse, corr
+        return trues, preds, runtime, epochs, timesteps, batchsize, neurons
 
     def save_model(self, model, path=''):
         """

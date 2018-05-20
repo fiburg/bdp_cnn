@@ -218,8 +218,8 @@ class Evaluater(object):
         earth = Basemap()
         earth.drawcoastlines()
 
-        levels = np.linspace(-8.5, 8.5, 18, endpoint=True)
-        ticks = np.linspace(-8, 8, 9, endpoint=True)
+        levels = np.linspace(-2.5, 2.5, 6, endpoint=True)
+        ticks = np.linspace(-2, 2, 3, endpoint=True)
 
         cp = plt.contourf(X, Y, mae, cmap=cm.seismic, levels=levels, extend="both", alpha=0.9)
         cb = plt.colorbar(cp, ticks=ticks)
@@ -322,24 +322,28 @@ class Evaluater(object):
         """
 
 if __name__ == "__main__":
-    neurons = 50
-    epochs = 20
-    time_steps = 12
-    batch_size = int(64 / 4)
+    #neurons = 50
+    #epochs = 20
+    #time_steps = 12
+    #batch_size = int(64 / 4)
 
     # change working/data directory
     wdir = './'
     #wdir = "/home/mpim/m300517/Hausaufgaben/bdp_cnn/bdp_cnn/cmip5/"
 
     # implement run directory
-    folder = '20180517_1430_31s'
+    folder = '20180518_1208_20s'
     path = wdir + 'runs/' + folder + '/'
 
     ev = Evaluater()
     dh = DataHandler()
 
-    history = dh.get_history(path=path)
-    ev.model_loss(history['loss'], history['val_loss'],
-                     neurons, batch_size, epochs, time_steps, 0, path=path)
-    ev.model_lr(history['lr'],
-                  neurons, batch_size, epochs, time_steps, 0, path=path)
+    trues, preds, runtime, epochs, time_steps, batch_size, neurons = dh.get_results("RMSE2.49_20180518_1455_11s.nc", path=path)
+
+    ev.map_mae(trues, preds, neurons, batch_size, epochs, time_steps, runtime, path=path)
+
+    #history = dh.get_history(path=path)
+    #ev.model_loss(history['loss'], history['val_loss'],
+    #                 neurons, batch_size, epochs, time_steps, runtime, path=path)
+    #ev.model_lr(history['lr'],
+    #              neurons, batch_size, epochs, time_steps, runtime, path=path)
