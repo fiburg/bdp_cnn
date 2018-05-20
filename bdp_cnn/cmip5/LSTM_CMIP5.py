@@ -331,12 +331,12 @@ if __name__ == "__main__":
     dh.save_results(truth, preds, rmse, corr, runtime, neurons,epochs,time_steps,batch_size, path=path)
 
     # evaluate the model and plot the results
-    ev.hist2d(truth, preds,
-              neurons, batch_size, epochs, time_steps, runtime, path=path)
-    ev.map_mae(truth, preds,
-               neurons, batch_size, epochs, time_steps, runtime, path=path)
-    history = dh.get_history(path=path)
-    ev.model_loss(history['loss'], history['val_loss'],
-                     neurons, batch_size, epochs, time_steps, runtime, path=path)
-    ev.model_lr(history['lr'],
-                  neurons, batch_size, epochs, time_steps, runtime, path=path)
+    #ev.hist2d(truth, preds,
+    #          neurons, batch_size, epochs, time_steps, runtime, path=path)
+    #ev.map_mae(truth, preds,
+    #           neurons, batch_size, epochs, time_steps, runtime, path=path)
+    #history = dh.get_history(path=path)
+    #ev.model_loss(history['loss'], history['val_loss'],
+    #                 neurons, batch_size, epochs, time_steps, runtime, path=path)
+    #ev.model_lr(history['lr'],
+    #              neurons, batch_size, epochs, time_steps, runtime, path=path)
