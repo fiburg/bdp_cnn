@@ -73,12 +73,17 @@ class LSTM_model(NN):
         """
         f0 = (4 * 1.5) * self.batch_size * self.time_steps + self.time_steps + 1
         f1 = f0 + (4 * 0.25) * self.batch_size * self.time_steps + self.time_steps + 1
-        print(f0)
+
         _data = DataHandler().get_var(file ,var_name="var167")
         _data = DataHandler().shape(_data)
         _data_data = scale().T(_data[:int(f0)])
         _valid_data = scale().T(_data[int(f0):int(f1)])
         _test_data = scale().T(_data[int(f1):])
+
+        print(_data.shape)
+        print(_data[:int(f0)].shape)
+        print(_data[int(f0):int(f1)].shape)
+        print(_data[int(f1):].shape)
 
 
         if self.data == None:
@@ -279,7 +284,7 @@ if __name__ == "__main__":
     ev = Evaluater()
 
     neurons = 50
-    epochs = 20
+    epochs = 1
     time_steps = 12
     batch_size = int(64 / 4)
 
@@ -321,7 +326,7 @@ if __name__ == "__main__":
     stop = timeit.default_timer()
     runtime = stop - start
     # end of model run
-
+    print(model.model.summary())
     # OUTPUT and EVALUATION
     # save the model with results
     dh.save_model(model.model, path=path)

@@ -266,8 +266,13 @@ class Evaluater(object):
 
         x, y = earth(lon, lat)
 
-        cp = plt.contourf(x, y, mae.T, cmap=cm.seismic, levels=levels, extend="both")
-        cb = plt.colorbar(cp, ticks=ticks)
+        #cp = plt.contourf(x, y, mae.T, cmap=cm.seismic, levels=levels, extend="both")
+        #print(mae.shape)
+
+
+        cp = plt.imshow(mae.T, cmap=plt.cm.get_cmap("seismic", 9), vmin=-2.25, vmax=2.25, extent=[0.,358.125,-88.57216851,88.57216851],
+                   interpolation='none')
+        cb = plt.colorbar(cp, extend="both", ticks=ticks)
         cb.set_label(r'LSTM Temperature - CMIP5 Temperature ($\Delta{}$K)')
 
         plt.tight_layout()
@@ -380,13 +385,14 @@ if __name__ == "__main__":
     #wdir = "/home/mpim/m300517/Hausaufgaben/bdp_cnn/bdp_cnn/cmip5/"
 
     # implement run directory
-    folder = '20180518_1208_20s'
+    folder = '20180518_1317_42s'
+    file = 'RMSE2.45_20180518_1342_06s.nc'
     path = wdir + 'runs/' + folder + '/'
 
     ev = Evaluater()
     dh = DataHandler()
 
-    trues, preds, runtime, epochs, time_steps, batch_size, neurons = dh.get_results("RMSE2.49_20180518_1455_11s.nc", path=path)
+    trues, preds, runtime, epochs, time_steps, batch_size, neurons = dh.get_results(file, path=path)
 
     #time, lat, lon = dh.get_dims("./data/lkm0401_echam6_BOT_mm_1850-2005.nc")
 

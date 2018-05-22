@@ -24,7 +24,7 @@ class DataHandler(object):
 
         """
         nc = Dataset(file_name)
-
+        print(nc)
         var = nc.variables[var_name][:]
 
         nc.close()
