@@ -1,7 +1,7 @@
 from netCDF4 import Dataset
 import numpy as np
 import matplotlib
-matplotlib.use("Agg")
+# matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from sklearn.metrics import mean_squared_error
@@ -9,6 +9,7 @@ from matplotlib.colors import LogNorm
 from matplotlib import cm
 from mpl_toolkits.basemap import Basemap
 from bdp_cnn.cmip5.datahandler import DataHandler
+import glob
 
 class Evaluater(object):
     """
@@ -386,8 +387,8 @@ if __name__ == "__main__":
 
     # implement run directory
     folder = '20180518_1317_42s'
-    file = 'RMSE2.45_20180518_1342_06s.nc'
-    path = wdir + 'runs/' + folder + '/'
+    file = glob.glob('RMSE*.nc')
+    path = "C:/Users/darkl/Desktop/runs/" + folder + '/'
 
     ev = Evaluater()
     dh = DataHandler()
